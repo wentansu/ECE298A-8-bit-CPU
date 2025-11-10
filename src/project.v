@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-`include "lut.v"
+`include "control_lut.v"
 
 `default_nettype none
 
@@ -25,7 +25,7 @@ module tt_um_8_bit_cpu (
   assign instruction = ui_in;
   assign state = 2'b10;
 
-  lut lookup_table (
+  control_lut lookup_table (
     .instruction(instruction),
     .state(state),
     .control_signals(control_signals)

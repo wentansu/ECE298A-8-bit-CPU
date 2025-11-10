@@ -1,4 +1,4 @@
-module lut (
+module control_lut (
     input  wire [7:0] instruction,
     input  wire [1:0] state,
     output reg  [15:0] control_signals
