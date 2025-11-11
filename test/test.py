@@ -61,7 +61,7 @@ async def test_project(dut):
 
                 # The following assersion is just an example of how to check the output values.
                 # Change it to match the actual expected output of your module:
-                print(f"{sources:04b} {instruction["name"].rjust(5)} {str(instruction["type"]).rjust(10)}", dut.uio_out.value, dut.uo_out.value)
+                print(f"{sources:04b} {instruction['name'].rjust(5)} {str(instruction['type']).rjust(10)}", dut.uio_out.value, dut.uo_out.value)
 
 
     # Keep testing the module by changing the input values, waiting for
