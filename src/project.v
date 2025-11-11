@@ -27,9 +27,16 @@ module tt_um_8_bit_cpu (
 
   control_lut lookup_table (
     .instruction(instruction),
-    .state(state),
+    // .state(state),
     .control_signals(control_signals)
   );
+
+  // Control signals for FETCH, DECODE, WRITEBACK
+  localparam [15:0] FETCH_CONTROL_SIGNALS = 16'h0400;
+  localparam [15:0] DECODE_CONTROL_SIGNALS_I_TYPE = {4'h0, 4'h2, 8'h00};
+  localparam [15:0] DECODE_CONTROL_SIGNALS = 16'h0000;
+  localparam [15:0] WRITEBACK_CONTROL_SIGNALS = 16'h3880;
+  localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD = 16'h0800; // [13:12] = instruction[5:4]
 
   // All output pins must be assigned. If not used, assign to 0.
   assign uo_out  = control_signals[7:0];
