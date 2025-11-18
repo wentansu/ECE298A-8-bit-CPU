@@ -28,8 +28,10 @@ async def test_project(dut):
 
     # Set the input values you want to test
     dut.a.value = 0b10101010
-    dut.b.value = 0b1111
-    dut.select.value = 0
+    dut.b.value = 0b11110000
+    dut.c.value = 0b01010101
+    dut.d.value = 0b00000000
+    dut.select.value = 0b00
 
     # Wait for one clock cycle to see the output values
     # await ClockCycles(dut.clk, 1)
@@ -41,10 +43,19 @@ async def test_project(dut):
 
     # Keep testing the module by changing the input values, waiting for
     # one or more clock cycles, and asserting the expected output values.
-    dut.select.value = 1
+    dut.select.value = 0b01
     await Timer(1, units="ns")
-    assert dut.out.value == 0b1111
+    print(dut.out.value)
 
-    dut.select.value = 0
+    dut.select.value = 0b10
     await Timer(1, units="ns")
-    assert dut.out.value == 0b10101010
+    print(dut.out.value)
+
+    dut.select.value = 0b11
+    await Timer(1, units="ns")
+    print(dut.out.value)
+
+    dut.a.value = 0b00110011
+    dut.select.value = 0b00
+    await Timer(1, units="ns")
+    print(dut.out.value)

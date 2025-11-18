@@ -1,10 +1,15 @@
 module mux (
     input  wire [7:0] a,
-    input  wire [3:0] b,
-    input  wire       select,
+    input  wire [7:0] b,
+    input  wire [7:0] c,
+    input  wire [7:0] d,
+    input  wire [1:0] select,
     output wire [7:0] out
 );
 
-    assign out = select ? {4'b0000, b} : a;
+    assign out = (select == 2'b00) ? a :
+                 (select == 2'b01) ? b :
+                 (select == 2'b10) ? c :
+                                     d;
 
 endmodule

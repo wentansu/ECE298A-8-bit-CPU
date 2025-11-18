@@ -15,8 +15,10 @@ module tb ();
 
   // Wire up the inputs and outputs:
   reg  [7:0] a;
-  reg  [3:0] b;
-  reg        select;
+  reg  [7:0] b;
+  reg  [7:0] c;
+  reg  [7:0] d;
+  reg  [1:0] select;
   wire [7:0] out;
 `ifdef GL_TEST
   wire VPWR = 1'b1;
@@ -34,6 +36,8 @@ module tb ();
 
       .a(a),
       .b(b),
+      .c(c),
+      .d(d),
       .select(select),
       .out(out)
   );
