@@ -5,6 +5,28 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
+INSTRUCTIONS = [
+    {"name": "NO_OP",         "opcode": 0x0, "type": ["N"]},
+    {"name": "ADD",           "opcode": 0x1, "type": ["R", "I"]},
+    {"name": "SUB",      "opcode": 0x2, "type": ["R", "I"]},
+    {"name": "SHL",    "opcode": 0x3, "type": ["O", "I"]},
+    {"name": "SHR",   "opcode": 0x4, "type": ["O", "I"]},
+    {"name": "AND",           "opcode": 0x5, "type": ["R", "I"]},
+    {"name": "OR",            "opcode": 0x6, "type": ["R", "I"]},
+    {"name": "XOR",           "opcode": 0x7, "type": ["R", "I"]},
+    {"name": "NOT",           "opcode": 0x8, "type": ["O", "I"]},
+    {"name": "LOAD", "opcode": 0xA, "type": ["I"]},
+    {"name": "GREAT",  "opcode": 0xB, "type": ["R", "I"]},
+    {"name": "LESS",     "opcode": 0xC, "type": ["R", "I"]},
+    {"name": "EQUAL",      "opcode": 0xD, "type": ["R", "I"]},
+]
+
+TYPES = {
+    "R": [1, 9, 13],
+    "O": [5],
+    "I": [1],
+    "N": [0]
+}
 
 @cocotb.test()
 async def test_project(dut):
@@ -25,16 +47,22 @@ async def test_project(dut):
 
     dut._log.info("Test project behavior")
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+    for instruction in INSTRUCTIONS:
+        opcode = instruction["opcode"]
 
-    # Wait for one clock cycle to see the output values
-    await ClockCycles(dut.clk, 1)
+        for type in instruction["type"]:
+            for sources in TYPES[type]:
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
+                # Set the input values you want to test
+                dut.ui_in.value = (sources << 4) | opcode
+
+                # Wait for one clock cycle to see the output values
+                await ClockCycles(dut.clk, 5)
+
+                # The following assersion is just an example of how to check the output values.
+                # Change it to match the actual expected output of your module:
+                print(f"{sources:04b} {instruction['name'].rjust(5)} {str(instruction['type']).rjust(10)}", dut.uio_out.value, dut.uo_out.value)
+
 
     # Keep testing the module by changing the input values, waiting for
     # one or more clock cycles, and asserting the expected output values.
