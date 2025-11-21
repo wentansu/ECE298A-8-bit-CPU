@@ -23,8 +23,8 @@ module tt_um_8_bit_cpu (
 
   wire [7:0] instruction;
   wire [1:0] state;
-  wire [7:0] instruction_reg;
-  wire [7:0] immediate_reg;
+  reg  [7:0] instruction_reg;
+  reg  [7:0] immediate_reg;
   wire [15:0] control_signals;
 
   localparam FETCH     = 2'b00;
@@ -37,14 +37,13 @@ module tt_um_8_bit_cpu (
 
   control_lut lookup_table (
     .instruction(instruction),
-    // .state(state),
     .control_signals(control_signals)
   );
 
-  wire [7:0] pc_in;
+  wire [7:0] pc_in  = 8'b0;   // FIX: was undriven
   wire [7:0] pc_out;
   wire load = 0;
-  wire inc = 1;
+  wire inc  = 1;
 
   counter pc (
     .ui_in(pc_in),
@@ -54,9 +53,8 @@ module tt_um_8_bit_cpu (
     .inc(inc)
   );
 
-
   wire [7:0] regA_out;
-  wire [7:0] regA_in;
+  wire [7:0] regA_in = 8'b0;  // FIX: was undriven
   wire mode = 0;
 
   register regA (
@@ -68,9 +66,9 @@ module tt_um_8_bit_cpu (
   );
 
   wire [7:0] alu_result;
-  wire [2:0] alu_op;
-  wire [7:0] alu_src1;
-  wire [7:0] alu_src2;
+  wire [2:0] alu_op  = 3'b0;   // FIX: was undriven
+  wire [7:0] alu_src1 = 8'b0;  // FIX: was undriven
+  wire [7:0] alu_src2 = 8'b0;  // FIX: was undriven
 
   alu alu_unit (
     .alu_op(alu_op),
@@ -81,52 +79,38 @@ module tt_um_8_bit_cpu (
     .rst_n(rst_n)
   );
 
-  // Control signals for FETCH, DECODE, WRITEBACK
-  localparam [15:0] FETCH_CONTROL_SIGNALS = 16'h0400;
-  localparam [15:0] DECODE_CONTROL_SIGNALS_I_TYPE = {4'h0, 4'h2, 8'h00};
-  localparam [15:0] DECODE_CONTROL_SIGNALS = 16'h0000;
-  localparam [15:0] WRITEBACK_CONTROL_SIGNALS = 16'h3880;
-  localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD = 16'h0800; // [13:12] = instruction[5:4]
+  // Control signals
+  localparam [15:0] FETCH_CONTROL_SIGNALS               = 16'h0400;
+  localparam [15:0] DECODE_CONTROL_SIGNALS_I_TYPE       = {4'h0, 4'h2, 8'h00};
+  localparam [15:0] DECODE_CONTROL_SIGNALS              = 16'h0000;
+  localparam [15:0] WRITEBACK_CONTROL_SIGNALS           = 16'h3880;
+  localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
 
   wire ins_load = control_signals[0];
   wire imm_load = control_signals[1];
 
+  // FIX: instruction_reg and immediate_reg must be driven
   always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            // assign instruction_reg = 8'b0;
-            // assign immediate_reg   = 8'b0;
+            instruction_reg <= 8'b0;
+            immediate_reg   <= 8'b0;
         end else begin
-            if (ins_load) begin
-                // capture instruction/opcode from io_in
-                // assign instruction_reg = io_in;
-            end
-            if (imm_load) begin
-                // capture immediate on the cycle where ImmLoad asserted
-                // assign immediate_reg = io_in;
-            end
+            if (ins_load)
+                instruction_reg <= ui_in;
+            if (imm_load)
+                immediate_reg <= ui_in;
         end
   end
 
-  // always @(posedge clk or negedge rst_n) begin
-  //       if (!rst_n) begin
-  //           state <= FETCH;
-  //       end else begin
-  //           case (state)
-  //               FETCH:     state <= DECODE;
-  //               DECODE:    state <= EXECUTE;
-  //               EXECUTE:   state <= WRITEBACK;
-  //               WRITEBACK: state <= FETCH;
-  //               default:   state <= FETCH;
-  //           endcase
-  //       end
-  // end
-
-  // All output pins must be assigned. If not used, assign to 0.
+  // Outputs
   assign uo_out  = control_signals[7:0];
   assign uio_out = control_signals[15:8];
   assign uio_oe  = 8'hff;
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+  // List unused signals (FIX: prevents UNUSEDSIGNAL warnings)
+  wire _unused = &{
+      uio_in, pc_out, regA_out, alu_result,
+      state, ena, clk, rst_n, 1'b0
+  };
 
 endmodule
