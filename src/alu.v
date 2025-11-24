@@ -139,30 +139,38 @@ module alu (
                 alu_flag = add_cout;       // carry
             end
 
-            3'b001,
-            3'b010,
-            3'b011: begin
-                // logic ops: OR, AND, NOR
-                alu_y    = logic_y;
-                alu_flag = 1'b0;
+            3'b001:  begin
+                // SUBTRACT: A - B
+                alu_y    = sub_diff;
+                alu_flag = sub_flag;       // borrow/flag
             end
-
-            3'b100: begin
+            3'b010: begin
                 // shift left
                 alu_y    = shift_y;
                 alu_flag = 1'b0;
             end
-
-            3'b101: begin
+            3'b011: begin
                 // shift right
                 alu_y    = shift_y;
                 alu_flag = 1'b0;
             end
 
+            3'b100: begin
+                // logic ops: OR, AND, NOR
+                alu_y    = logic_y;
+                alu_flag = 1'b0;
+            end
+
+            3'b101: begin
+                // logic ops: OR, AND, NOR
+                alu_y    = logic_y;
+                alu_flag = 1'b0;
+            end
+
             3'b110: begin
-                // SUBTRACT: A - B
-                alu_y    = sub_diff;
-                alu_flag = sub_flag;       // borrow/flag
+                // logic ops: OR, AND, NOR
+                alu_y    = logic_y;
+                alu_flag = 1'b0;
             end
 
             default: begin
