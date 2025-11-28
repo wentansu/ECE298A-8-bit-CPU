@@ -56,7 +56,7 @@ module shifter8 (
     assign y = dir ? (a >> shamt) : (a << shamt);
 endmodule
 
-module tt_com_alu (
+module alu (
     
     input  wire [7:0] ui_in,
     input  wire [7:0] uio_in,
