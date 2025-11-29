@@ -7,6 +7,7 @@
 `include "alu.v"
 `include "counter.v"
 `include "reg.v"
+`include "mux.v"
 
 `default_nettype none
 
@@ -22,9 +23,8 @@ module tt_um_8_bit_cpu (
 );
 
   wire [7:0] instruction;
-  wire [1:0] state;
-  reg  [7:0] instruction_reg;
-  reg  [7:0] immediate_reg;
+  reg [1:0] state;
+  wire [1:0] next_state;
   wire [15:0] control_signals;
 
   localparam FETCH     = 2'b00;
@@ -32,49 +32,112 @@ module tt_um_8_bit_cpu (
   localparam EXECUTE   = 2'b10;
   localparam WRITEBACK = 2'b11;
 
-  assign instruction = ui_in;
-  assign state = EXECUTE;
+  localparam ZERO = 8'b0;
 
   control_lut lookup_table (
     .instruction(instruction),
+    .state(state),
     .control_signals(control_signals)
   );
 
-  wire [7:0] pc_in  = 8'b0;   // FIX: was undriven
+  wire [3:0] alu_op = control_signals[3:0];
+  wire [1:0] alu_src = control_signals[5:4];
+  wire out = control_signals[7];
+  wire immediate_load = control_signals[9];
+  wire instruction_load = control_signals[10];
+  wire reg_write = control_signals[11];
+  wire [1:0] reg_dest = control_signals[13:12];
+
+  wire reg_write_A = (reg_write == 1 && reg_dest == 2'b01) ? 1 : 0;
+  wire reg_write_B = (reg_write == 1 && reg_dest == 2'b10) ? 1 : 0;
+  wire reg_write_acc = (reg_write == 1 && reg_dest == 2'b11) ? 1 : 0;
+
+  wire [7:0] pc_in  = 8'b0;
   wire [7:0] pc_out;
-  wire load = 0;
-  wire inc  = 1;
+  wire pc_load = 0;
+  wire pc_inc  = 1;
 
   counter pc (
     .ui_in(pc_in),
-    .load(load),
+    .load(pc_load),
     .uo_out(pc_out),
     .clk(clk),
-    .inc(inc)
+    .inc(pc_inc)
   );
 
-  wire [7:0] regA_out;
-  wire [7:0] regA_in = 8'b0;  // FIX: was undriven
-  wire mode = 0;
+  wire [7:0] immediate;
 
-  register regA (
-    .mode(mode),
-    .uo_out(regA_out),
-    .uio_in(regA_in),
+  register instructionReg (
+    .mode(instruction_load),
+    .uo_out(instruction),
+    .uio_in(ui_in),
     .clk(clk),
     .rst_n(rst_n)
   );
 
+  register immediateReg (
+    .mode(control_signals[9]),
+    .uo_out(immediate),
+    .uio_in(ui_in),
+    .clk(clk),
+    .rst_n(rst_n)
+  );
+
+  wire [7:0] regA_out;
+  wire [7:0] regB_out;
+  wire [7:0] acc_out;
+
+  register regA (
+    .mode(reg_write_A),
+    .uo_out(regA_out),
+    .uio_in(immediate),
+    .clk(clk),
+    .rst_n(rst_n)
+  );
+
+  register regB (
+    .mode(reg_write_B),
+    .uo_out(regB_out),
+    .uio_in(immediate),
+    .clk(clk),
+    .rst_n(rst_n)
+  );
+
+  wire [7:0] alu_src1 = 8'b0;
+  wire [7:0] alu_src2 = 8'b0;
+
+  mux multiplexer (
+    .a(immediate),
+    .b(ZERO),
+    .c(regB_out),
+    .d(acc_out),
+    .select(alu_src),
+    .out(alu_src2)
+  );
+
   wire [7:0] alu_result;
-  wire [2:0] alu_op  = 3'b0;   // FIX: was undriven
-  wire [7:0] alu_src1 = 8'b0;  // FIX: was undriven
-  wire [7:0] alu_src2 = 8'b0;  // FIX: was undriven
 
   alu alu_unit (
     .alu_op(alu_op),
-    .ui_in(alu_src1),
+    .ui_in(regA_out),
     .uo_out(alu_result),
     .uio_in(alu_src2),
+    .clk(clk),
+    .rst_n(rst_n)
+  );
+
+  register acc (
+    .mode(reg_write_acc),
+    .uo_out(acc_out),
+    .uio_in(alu_result),
+    .clk(clk),
+    .rst_n(rst_n)
+  );
+
+  register outReg (
+    .mode(!out),
+    .uo_out(uo_out),
+    .uio_in(acc_out),
     .clk(clk),
     .rst_n(rst_n)
   );
@@ -86,28 +149,21 @@ module tt_um_8_bit_cpu (
   localparam [15:0] WRITEBACK_CONTROL_SIGNALS           = 16'h3880;
   localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
 
-  wire ins_load = control_signals[0];
-  wire imm_load = control_signals[1];
-
-  // FIX: instruction_reg and immediate_reg must be driven
   always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            instruction_reg <= 8'b0;
-            immediate_reg   <= 8'b0;
-        end else begin
-            if (ins_load)
-                instruction_reg <= ui_in;
-            if (imm_load)
-                immediate_reg <= ui_in;
-        end
+    if (!rst_n) begin
+      state <= FETCH;
+    end else begin
+      case (state)
+        FETCH: state <= DECODE;
+        DECODE: state <= EXECUTE;
+        EXECUTE: state <= WRITEBACK;
+        WRITEBACK: state <= FETCH;
+        default: state <= FETCH;
+      endcase
+    end
   end
 
-  // Outputs
-  assign uo_out  = control_signals[7:0];
-  assign uio_out = control_signals[15:8];
-  assign uio_oe  = 8'hff;
-
-  // List unused signals (FIX: prevents UNUSEDSIGNAL warnings)
+  // List unused signals
   wire _unused = &{
       uio_in, pc_out, regA_out, alu_result,
       state, ena, clk, rst_n, 1'b0

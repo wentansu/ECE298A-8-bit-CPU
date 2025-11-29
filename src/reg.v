@@ -1,6 +1,6 @@
 /*
  * Tri-state output register with single R/W* control.
- * ui_in[0] = R_nW  (1 = READ: drive bus; 0 = WRITE: capture uio_in on clk)
+ * ui_in[0] = R_nW  (0 = READ: drive bus; 1 = WRITE: capture uio_in on clk)
  */
 
 module register (
@@ -17,7 +17,7 @@ module register (
   always @(posedge clk) begin
     if (!rst_n) begin
       reg_q <= 8'd0;
-    end else if (!mode) begin
+    end else if (mode) begin
       reg_q <= uio_in;          // WRITE: capture bus
     end
   end

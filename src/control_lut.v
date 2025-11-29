@@ -1,6 +1,6 @@
 module control_lut (
     input  wire [7:0] instruction,
-    // input  wire [1:0] state,
+    input  wire [1:0] state,
     output reg  [15:0] control_signals
 );
 
@@ -8,12 +8,22 @@ module control_lut (
     `define IS_IN_RTYPE(val) ((val==4'h1)||(val==4'h2)||(val==4'h5)||(val==4'h6)||(val==4'h7)||(val==4'hB)||(val==4'hC)||(val==4'hD))
     `define IS_IN_OTYPE(val) ((val==4'h3)||(val==4'h4)||(val==4'h8))
     `define IS_IN_NTYPE(val) ((val==4'h0))
+    `define IS_IN_ITYPE(val) ((val==2'b0))
 
     // State[1:0]
-    // localparam FETCH     = 2'b00;
-    // localparam DECODE    = 2'b01;
-    // localparam EXECUTE   = 2'b10;
-    // localparam WRITEBACK = 2'b11;
+    localparam FETCH     = 2'b00;
+    localparam DECODE    = 2'b01;
+    localparam EXECUTE   = 2'b10;
+    localparam WRITEBACK = 2'b11;
+
+    // Control signals
+    localparam [15:0] FETCH_CONTROL_SIGNALS               = 16'h0400;
+    localparam [15:0] DECODE_CONTROL_SIGNALS_I_TYPE       = {4'h0, 4'h2, 8'h00};
+    localparam [15:0] DECODE_CONTROL_SIGNALS              = 16'h0000;
+    localparam [15:0] WRITEBACK_CONTROL_SIGNALS           = 16'h3880;
+    localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
+
+    localparam [3:0] LOAD = 4'hA;
 
     // ALUOp[3:0]
     // localparam ALU_NO_OP        = 4'b0000;
@@ -119,7 +129,28 @@ module control_lut (
 
     // Return value in LUT based on index
     always @(*) begin
-        control_signals = lut[index];
+        case (state)
+            FETCH: begin
+                control_signals = FETCH_CONTROL_SIGNALS;
+            end
+            DECODE: begin
+                if (`IS_IN_ITYPE(instruction[7:6])) begin
+                    control_signals = DECODE_CONTROL_SIGNALS_I_TYPE;
+                end else begin
+                    control_signals = DECODE_CONTROL_SIGNALS;
+                end
+            end
+            EXECUTE: begin
+                control_signals = lut[index];
+            end
+            WRITEBACK: begin
+                if (instruction[3:0] == LOAD) begin
+                    control_signals = WRITEBACK_CONTROL_SIGNALS_LOAD;
+                end else begin
+                    control_signals = WRITEBACK_CONTROL_SIGNALS;
+                end
+            end
+        endcase
     end
 
 endmodule
