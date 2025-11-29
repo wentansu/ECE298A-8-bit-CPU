@@ -1,23 +1,29 @@
-
 // ---------------------------------------------------------------------------
 // 8-bit adder: used for ADD operation
+// 0 : ADD
+// 1 : SUB
 // ---------------------------------------------------------------------------
 module adder8 (
     input  wire [7:0] a,
     input  wire [7:0] b,
-    output wire [7:0] sum,
-    output wire       cout
+    input  wire      op,
+    output reg [7:0] sum
 );
-    assign {cout, sum} = a + b;
+    always @* begin
+        case (op)
+            0: sum = a + b;
+            1: sum = a - b;
+            default: sum = 8'h00;       // unused / safe default
+        endcase
+    end
 endmodule
 
 // ---------------------------------------------------------------------------
 // 8-bit logic unit: OR, AND, NOR
-// sel encoding (matches func_sel[1:0] for opcodes 001,010,011):
-//   2'b01 : OR
-//   2'b10 : AND
-//   2'b11 : NOR
-//   2'b00 : (unused → 0)
+//   00 : AND
+//   01 : OR
+//   10 : NOR
+//   11 : XOR
 // ---------------------------------------------------------------------------
 module logic_unit8 (
     input  wire [7:0] a,
@@ -27,9 +33,10 @@ module logic_unit8 (
 );
     always @* begin
         case (sel)
+            2'b00: y = a & b;         // AND
             2'b01: y = a | b;         // OR
-            2'b10: y = a & b;         // AND
-            2'b11: y = ~(a | b);      // NOR
+            2'b10: y = ~(a | b);      // NOR
+            2'b11: y = a ^ b;         // XOR
             default: y = 8'h00;       // unused / safe default
         endcase
     end
@@ -37,8 +44,8 @@ endmodule
 
 // ---------------------------------------------------------------------------
 // 8-bit logical shifter
-// dir = 0 → shift left
-// dir = 1 → shift right
+// 0 : shift left
+// 1 : shift right
 // ---------------------------------------------------------------------------
 module shifter8 (
     input  wire [7:0] a,
@@ -49,30 +56,6 @@ module shifter8 (
     assign y = dir ? (a >> shamt) : (a << shamt);
 endmodule
 
-// ---------------------------------------------------------------------------
-// Top-level ALU for TinyTapeout-style interface
-//
-//  Pins:
-//    ui_in[7:0]  : A + function select in lower bits
-//    uio_in[7:0] : B / shift amount (lower bits)
-//    uo_out[7:0] : result (registered)
-//    uio_out[0]  : flag/carry (registered), rest 0
-//    uio_oe[0]   : 1 (drive flag), others 0
-//
-//  Function select (from ui_in[2:0]):
-//    000 : ADD          (A + B)              [adder8]
-//    001 : OR           (A | B)              [logic_unit8]
-//    010 : AND          (A & B)              [logic_unit8]
-//    011 : NOR          ~(A | B)             [logic_unit8]
-//    100 : SHIFT LEFT   (A << shamt)         [shifter8, dir=0]
-//    101 : SHIFT RIGHT  (A >> shamt)         [shifter8, dir=1]
-//    110 : SUBTRACT     (A - B)              new
-//    111 : reserved → 0
-//
-//  A     = ui_in[7:0]
-//  B     = uio_in[7:0]
-//  shamt = uio_in[2:0]
-// ---------------------------------------------------------------------------
 module alu (
     
     input  wire [7:0] ui_in,
@@ -93,13 +76,12 @@ module alu (
     // ---------------------- Submodule outputs -------------------------------
     // ADD
     wire [7:0] add_sum;
-    wire       add_cout;
 
     adder8 u_adder8 (
         .a   (A),
         .b   (B),
-        .sum (add_sum),
-        .cout(add_cout)
+        .op  (func_sel[0]),
+        .sum (add_sum)
     );
 
     // Logic (OR/AND/NOR)
@@ -113,19 +95,13 @@ module alu (
 
     // Shifter
     wire [7:0] shift_y;
-    wire       shift_dir = (func_sel == 3'b101) ? 1'b1 : 1'b0; // 100→left, 101→right
 
     shifter8 u_shifter8 (
         .a     (A),
         .shamt (shamt),
-        .dir   (shift_dir),
+        .dir   (func_sel[0]),
         .y     (shift_y)
     );
-
-    // SUBTRACT: A - B
-    wire [7:0] sub_diff;
-    wire       sub_flag;    // treat as borrow/flag bit
-    assign {sub_flag, sub_diff} = A - B;
 
     // ---------------------- Operation select mux ----------------------------
     reg [7:0] alu_y;
@@ -136,13 +112,13 @@ module alu (
             3'b000: begin
                 // ADD
                 alu_y    = add_sum;
-                alu_flag = add_cout;       // carry
+                alu_flag = 0;       // carry
             end
 
             3'b001:  begin
-                // SUBTRACT: A - B
-                alu_y    = sub_diff;
-                alu_flag = sub_flag;       // borrow/flag
+                // SUB
+                alu_y    = add_sum;
+                alu_flag = 0;       // carry
             end
             3'b010: begin
                 // shift left
@@ -172,6 +148,11 @@ module alu (
                 alu_y    = logic_y;
                 alu_flag = 1'b0;
             end
+            3'b111: begin
+                // logic ops: OR, AND, NOR
+                alu_y    = logic_y;
+                alu_flag = 1'b0;
+            end
 
             default: begin
                 alu_y    = 8'h00;
@@ -196,4 +177,3 @@ module alu (
     assign uo_out  = y_q;
 
 endmodule
-
