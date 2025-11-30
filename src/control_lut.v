@@ -21,7 +21,7 @@ module control_lut (
     localparam [15:0] DECODE_CONTROL_SIGNALS_I_TYPE       = {4'h0, 4'h2, 8'h00};
     localparam [15:0] DECODE_CONTROL_SIGNALS              = 16'h0000;
     localparam [15:0] WRITEBACK_CONTROL_SIGNALS           = 16'h3880;
-    localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
+    localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0000;
 
     localparam [3:0] LOAD = 4'hA;
 
@@ -92,7 +92,11 @@ module control_lut (
 
         // EXECUTE
         for (integer i = 0; i < 256; i = i + 1) begin
-            if (`IS_IN_RTYPE(i[3:0])) begin
+            if (i[3:0] == LOAD) begin
+                // Load
+                // Not using ALU
+                lut[i[7:0]] = {2'b00, i[5:4], 4'h8, 2'b00, 2'b00, 4'h0};
+            end else if (`IS_IN_RTYPE(i[3:0])) begin
                 // R type instructions
                 // Assume Source 1 is always Reg A
                 lut[i[7:0]] = {8'h00, 2'b00, i[7:6], i[3:0]};
@@ -105,10 +109,6 @@ module control_lut (
                 end else begin
                     lut[i[7:0]] = {8'h00, 2'b00, 2'b01, i[3:0]};
                 end
-            end else if (i[3:0] == 4'hA) begin
-                // Load
-                // Not using ALU
-                lut[i[7:0]] = {8'h00, 2'b00, 2'b01, 4'h0};
             end
         end    
 

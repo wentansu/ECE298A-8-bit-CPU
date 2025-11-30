@@ -32,18 +32,18 @@ TYPES = {
 async def test_project(dut):
     dut._log.info("Start")
 
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, unit="us")
+    # Set the clock period to 1 us (1 MHz)
+    clock = Clock(dut.clk, 1, unit="us")
     cocotb.start_soon(clock.start())
 
     # Reset
     dut._log.info("Reset")
     dut.ena.value = 1
-    dut.ui_in.value = 0
+    # dut.ui_in.value = 0
     dut.uio_in.value = 0
-    dut.rst_n.value = 0
+    # dut.rst_n.value = 0
     # await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
+    # dut.rst_n.value = 1
 
     dut._log.info("Test project behavior")
 
@@ -67,29 +67,19 @@ async def test_project(dut):
     #     await ClockCycles(dut.clk, 1)
     #     print(dut.uio_out.value)
 
-    print(dut.uio_out.value)
+    await ClockCycles(dut.clk, 5)
+
+    dut.ui_in.value = 0b00011010
+
     await ClockCycles(dut.clk, 1)
-    print(dut.uio_out.value)
-    dut.ui_in.value = 0b00011011
-    await ClockCycles(dut.clk, 1)
-    print(dut.uio_out.value)
+
     dut.ui_in.value = 0b00001000
+
     await ClockCycles(dut.clk, 1)
-    print(dut.uio_out.value)
+    
     await ClockCycles(dut.clk, 1)
-    print(dut.uio_out.value)
+    
     await ClockCycles(dut.clk, 1)
-    print(dut.uio_out.value)
-    dut.ui_in.value = 0b00010001
-    await ClockCycles(dut.clk, 1)
-    print(dut.uio_out.value)
-    dut.ui_in.value = 0b00001000
-    await ClockCycles(dut.clk, 1)
-    print(dut.uio_out.value)
-    await ClockCycles(dut.clk, 1)
-    print(dut.uio_out.value)
-    await ClockCycles(dut.clk, 1)
-    print(dut.uio_out.value)
     print("Output:", dut.uo_out.value)
 
 
