@@ -42,26 +42,55 @@ async def test_project(dut):
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    # await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
 
     dut._log.info("Test project behavior")
 
-    for instruction in INSTRUCTIONS:
-        opcode = instruction["opcode"]
+    # for instruction in INSTRUCTIONS:
+    #     opcode = instruction["opcode"]
 
-        for type in instruction["type"]:
-            for sources in TYPES[type]:
+    #     for type in instruction["type"]:
+    #         for sources in TYPES[type]:
 
-                # Set the input values you want to test
-                dut.ui_in.value = (sources << 4) | opcode
+    #             # Set the input values you want to test
+    #             dut.ui_in.value = (sources << 4) | opcode
 
-                # Wait for one clock cycle to see the output values
-                await ClockCycles(dut.clk, 5)
+    #             # Wait for one clock cycle to see the output values
+    #             await ClockCycles(dut.clk, 5)
 
-                # The following assersion is just an example of how to check the output values.
-                # Change it to match the actual expected output of your module:
-                print(f"{sources:04b} {instruction['name'].rjust(5)} {str(instruction['type']).rjust(10)}", dut.uio_out.value, dut.uo_out.value)
+    #             # The following assersion is just an example of how to check the output values.
+    #             # Change it to match the actual expected output of your module:
+    #             print(f"{sources:04b} {instruction['name'].rjust(5)} {str(instruction['type']).rjust(10)}", dut.uio_out.value, dut.uo_out.value)
+
+    # for i in range (12):
+    #     await ClockCycles(dut.clk, 1)
+    #     print(dut.uio_out.value)
+
+    print(dut.uio_out.value)
+    await ClockCycles(dut.clk, 1)
+    print(dut.uio_out.value)
+    dut.ui_in.value = 0b00011011
+    await ClockCycles(dut.clk, 1)
+    print(dut.uio_out.value)
+    dut.ui_in.value = 0b00001000
+    await ClockCycles(dut.clk, 1)
+    print(dut.uio_out.value)
+    await ClockCycles(dut.clk, 1)
+    print(dut.uio_out.value)
+    await ClockCycles(dut.clk, 1)
+    print(dut.uio_out.value)
+    dut.ui_in.value = 0b00010001
+    await ClockCycles(dut.clk, 1)
+    print(dut.uio_out.value)
+    dut.ui_in.value = 0b00001000
+    await ClockCycles(dut.clk, 1)
+    print(dut.uio_out.value)
+    await ClockCycles(dut.clk, 1)
+    print(dut.uio_out.value)
+    await ClockCycles(dut.clk, 1)
+    print(dut.uio_out.value)
+    print("Output:", dut.uo_out.value)
 
 
     # Keep testing the module by changing the input values, waiting for

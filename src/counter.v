@@ -7,14 +7,17 @@ module counter (
 );
   //sets reg
   reg [7:0] counter;
+  wire [7:0] data = ui_in;
 
-  wire [7:0]dat = ui_in;
+  initial begin
+    counter = 8'b0;
+  end
 
   // All output pins must be assigned. If not used, assign to 0.
   //assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
   always @(posedge clk) begin
     if (load)
-      counter <= dat;
+      counter <= data;
     else if (inc)
       counter <= counter + 8'b1;
   end

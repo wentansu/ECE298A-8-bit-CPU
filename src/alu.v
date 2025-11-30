@@ -19,24 +19,23 @@ module adder8 (
 endmodule
 
 // ---------------------------------------------------------------------------
-// 8-bit logic unit: OR, AND, NOR
-//   00 : AND
-//   01 : OR
-//   10 : NOR
-//   11 : XOR
+// 8-bit logic unit: AND, OR, XOR, NOT
 // ---------------------------------------------------------------------------
 module logic_unit8 (
     input  wire [7:0] a,
     input  wire [7:0] b,
-    input  wire [1:0] sel,
+    input  wire [3:0] sel,
     output reg  [7:0] y
 );
     always @* begin
         case (sel)
-            2'b00: y = a & b;         // AND
-            2'b01: y = a | b;         // OR
-            2'b10: y = ~(a | b);      // NOR
-            2'b11: y = a ^ b;         // XOR
+            4'h5: y = a & b;         // AND
+            4'h6: y = a | b;         // OR
+            4'h7: y = a ^ b;         // XOR
+            4'h8: y = ~a;            // NOT
+            4'hB: y = (a < b);
+            4'hC: y = (a == b);
+            4'hD: y = (a > b);
             default: y = 8'h00;       // unused / safe default
         endcase
     end
@@ -61,13 +60,13 @@ module alu (
     input  wire [7:0] ui_in,
     input  wire [7:0] uio_in,
     output wire [7:0] uo_out,
-    input  wire [2:0] alu_op,    
+    input  wire [3:0] alu_op,    
     input  wire       clk,
     input  wire       rst_n
 );
 
     // Decode function select
-    wire [2:0] func_sel = alu_op;
+    wire [3:0] func_sel = alu_op;
 
     wire [7:0] A = ui_in;
     wire [7:0] B = uio_in;
@@ -76,30 +75,33 @@ module alu (
     // ---------------------- Submodule outputs -------------------------------
     // ADD
     wire [7:0] add_sum;
+    wire add_sub = (func_sel == 4'h1) ? 0 : 1;
 
     adder8 u_adder8 (
         .a   (A),
         .b   (B),
-        .op  (func_sel[0]),
+        .op  (add_sub),
         .sum (add_sum)
     );
 
     // Logic (OR/AND/NOR)
     wire [7:0] logic_y;
+
     logic_unit8 u_logic8 (
         .a   (A),
         .b   (B),
-        .sel (func_sel[1:0]),   // 00=OR, 01=AND, 10=NOR
+        .sel (func_sel),
         .y   (logic_y)
     );
 
     // Shifter
     wire [7:0] shift_y;
+    wire left_right = (func_sel == 4'h3) ? 0 : 1;
 
     shifter8 u_shifter8 (
         .a     (A),
         .shamt (shamt),
-        .dir   (func_sel[0]),
+        .dir   (left_right),
         .y     (shift_y)
     );
 
@@ -109,48 +111,74 @@ module alu (
 
     always @* begin
         case (func_sel)
-            3'b000: begin
+            4'h1: begin
                 // ADD
                 alu_y    = add_sum;
                 alu_flag = 0;       // carry
             end
 
-            3'b001:  begin
+            4'h2:  begin
                 // SUB
                 alu_y    = add_sum;
                 alu_flag = 0;       // carry
             end
-            3'b010: begin
+            4'h3: begin
                 // shift left
                 alu_y    = shift_y;
                 alu_flag = 1'b0;
             end
-            3'b011: begin
+            4'h4: begin
+                // shift right
                 // shift right
                 alu_y    = shift_y;
                 alu_flag = 1'b0;
             end
 
-            3'b100: begin
-                // logic ops: OR, AND, NOR
+            4'h5: begin
+                // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
                 alu_flag = 1'b0;
             end
 
-            3'b101: begin
-                // logic ops: OR, AND, NOR
+            4'h6: begin
+                // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
                 alu_flag = 1'b0;
             end
 
-            3'b110: begin
-                // logic ops: OR, AND, NOR
+            4'h7: begin
+                // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
                 alu_flag = 1'b0;
             end
-            3'b111: begin
-                // logic ops: OR, AND, NOR
+            4'h8: begin
+                // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
+                alu_flag = 1'b0;
+            end
+
+            4'hA: begin
+                alu_y = uio_in;
+                alu_flag = 1'b0;
+            end
+
+            4'hB: begin
+                alu_y    = logic_y;
+                alu_flag = 1'b0;
+            end
+
+            4'hC: begin
+                alu_y    = logic_y;
+                alu_flag = 1'b0;
+            end
+
+            4'hD: begin
+                alu_y    = logic_y;
+                alu_flag = 1'b0;
+            end
+
+            4'h0: begin
+                alu_y = 8'h00;
                 alu_flag = 1'b0;
             end
 

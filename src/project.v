@@ -52,7 +52,7 @@ module tt_um_8_bit_cpu (
   wire reg_write_B = (reg_write == 1 && reg_dest == 2'b10) ? 1 : 0;
   wire reg_write_acc = (reg_write == 1 && reg_dest == 2'b11) ? 1 : 0;
 
-  wire [7:0] pc_in  = 8'b0;
+  wire [7:0] pc_in;
   wire [7:0] pc_out;
   wire pc_load = 0;
   wire pc_inc  = 1;
@@ -65,7 +65,7 @@ module tt_um_8_bit_cpu (
     .inc(pc_inc)
   );
 
-  wire [7:0] immediate;
+  wire [7:0] immediate = 8'b0;
 
   register instructionReg (
     .mode(instruction_load),
@@ -103,8 +103,8 @@ module tt_um_8_bit_cpu (
     .rst_n(rst_n)
   );
 
-  wire [7:0] alu_src1 = 8'b0;
-  wire [7:0] alu_src2 = 8'b0;
+  wire [7:0] alu_src1;
+  wire [7:0] alu_src2;
 
   mux multiplexer (
     .a(immediate),
@@ -149,6 +149,9 @@ module tt_um_8_bit_cpu (
   localparam [15:0] WRITEBACK_CONTROL_SIGNALS           = 16'h3880;
   localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
 
+  assign uio_oe = 8'hFF;
+  assign uio_out = {pc_out[5:0], state};
+
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       state <= FETCH;
@@ -165,8 +168,7 @@ module tt_um_8_bit_cpu (
 
   // List unused signals
   wire _unused = &{
-      uio_in, pc_out, regA_out, alu_result,
-      state, ena, clk, rst_n, 1'b0
+      uio_in, ena
   };
 
 endmodule
