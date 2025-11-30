@@ -65,7 +65,7 @@ module tt_um_8_bit_cpu (
     .inc(pc_inc)
   );
 
-  wire [7:0] immediate = 8'b0;
+  wire [7:0] immediate;
 
   register instructionReg (
     .mode(instruction_load),
