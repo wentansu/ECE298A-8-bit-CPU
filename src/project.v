@@ -24,7 +24,6 @@ module tt_um_8_bit_cpu (
 
   wire [7:0] instruction;
   reg [1:0] state;
-  wire [1:0] next_state;
   wire [15:0] control_signals;
 
   localparam FETCH     = 2'b00;
@@ -52,7 +51,7 @@ module tt_um_8_bit_cpu (
   wire reg_write_B = (reg_write == 1 && reg_dest == 2'b10) ? 1 : 0;
   wire reg_write_acc = (reg_write == 1 && reg_dest == 2'b11) ? 1 : 0;
 
-  wire [7:0] pc_in;
+  wire [7:0] pc_in = 8'b0;
   wire [7:0] pc_out;
   wire pc_load = 0;
   wire pc_inc  = 1;
@@ -76,7 +75,7 @@ module tt_um_8_bit_cpu (
   );
 
   register immediateReg (
-    .mode(control_signals[9]),
+    .mode(immediate_load),
     .uo_out(immediate),
     .uio_in(ui_in),
     .clk(clk),
@@ -103,7 +102,6 @@ module tt_um_8_bit_cpu (
     .rst_n(rst_n)
   );
 
-  wire [7:0] alu_src1;
   wire [7:0] alu_src2;
 
   mux multiplexer (
@@ -168,7 +166,7 @@ module tt_um_8_bit_cpu (
 
   // List unused signals
   wire _unused = &{
-      uio_in, ena
+      uio_in, ena, control_signals[15:14], control_signals[8], control_signals[6], pc_out[7:6]
   };
 
 endmodule

@@ -33,9 +33,9 @@ module logic_unit8 (
             4'h6: y = a | b;         // OR
             4'h7: y = a ^ b;         // XOR
             4'h8: y = ~a;            // NOT
-            4'hB: y = (a < b);
-            4'hC: y = (a == b);
-            4'hD: y = (a > b);
+            4'hB: y = {7'b0, (a < b)};
+            4'hC: y = {7'b0, (a == b)};
+            4'hD: y = {7'b0, (a > b)};
             default: y = 8'h00;       // unused / safe default
         endcase
     end
@@ -107,84 +107,84 @@ module alu (
 
     // ---------------------- Operation select mux ----------------------------
     reg [7:0] alu_y;
-    reg       alu_flag;  // use as carry/flag output
+    // reg       alu_flag;  // use as carry/flag output
 
     always @* begin
         case (func_sel)
             4'h1: begin
                 // ADD
                 alu_y    = add_sum;
-                alu_flag = 0;       // carry
+                // alu_flag = 0;       // carry
             end
 
             4'h2:  begin
                 // SUB
                 alu_y    = add_sum;
-                alu_flag = 0;       // carry
+                // alu_flag = 0;       // carry
             end
             4'h3: begin
                 // shift left
                 alu_y    = shift_y;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
             4'h4: begin
                 // shift right
                 // shift right
                 alu_y    = shift_y;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
 
             4'h5: begin
                 // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
 
             4'h6: begin
                 // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
 
             4'h7: begin
                 // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
             4'h8: begin
                 // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
-                alu_flag = 1'b0;
+                //alu_flag = 1'b0;
             end
 
             4'hA: begin
                 alu_y = uio_in;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
 
             4'hB: begin
                 alu_y    = logic_y;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
 
             4'hC: begin
                 alu_y    = logic_y;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
 
             4'hD: begin
                 alu_y    = logic_y;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
 
             4'h0: begin
                 alu_y = 8'h00;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
 
             default: begin
                 alu_y    = 8'h00;
-                alu_flag = 1'b0;
+                // alu_flag = 1'b0;
             end
         endcase
     end
