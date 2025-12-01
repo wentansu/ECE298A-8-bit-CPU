@@ -22,7 +22,6 @@ module control_lut (
     localparam [15:0] DECODE_CONTROL_SIGNALS_I_TYPE       = {4'h0, 4'h2, 8'h00};
     localparam [15:0] DECODE_CONTROL_SIGNALS              = 16'h0000;
     localparam [15:0] WRITEBACK_CONTROL_SIGNALS           = 16'h3880;
-    localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0000;
     localparam [15:0] OUTPUT_CONTROL_SIGNALS              = 16'h0080;
 
     localparam [3:0] LOAD = 4'hA;
@@ -40,11 +39,22 @@ module control_lut (
         for (integer i = 0; i < 256; i = i + 1) begin
             if (i[3:0] == LOAD) begin
                 // LOAD
-                // ALUSrc is always immediate
-                lut[i[7:0]] = {2'b00, i[5:4], 4'h8, 2'b01, 2'b00, 4'hA};
+                if (i[7:6] != 2'b11 && i[5:4] == 2'b11) begin
+                    // Destination is Acc
+                    if (i[7:6] == 2'b01) begin
+                        // Source is Reg A
+                        lut[i[7:0]] = {2'b00, 2'b11, 4'h8, 2'b00, 2'b01, 4'hA};
+                    end else begin
+                        // Source is Reg B or Imm
+                        lut[i[7:0]] = {2'b00, 2'b11, 4'h8, 2'b01, i[7:6], 4'hA};
+                    end
+                end else if (i[7:6] == 2'b0 && i[5:4] != 2'b0) begin
+                    // Destination is Reg A or Reg B
+                    lut[i[7:0]] = {2'b00, i[5:4], 4'h8, 2'b01, 2'b00, 4'hA};
+                end
             end else if (`IS_RTYPE(i[3:0])) begin
                 // R type instructions
-                // Assume Source 1 is always Reg A
+                // Source 1 is always Reg A
                 lut[i[7:0]] = {8'h00, 2'b00, i[7:6], i[3:0]};
             end else if (`IS_OTYPE(i[3:0])) begin
                 // O type instructions
@@ -82,11 +92,7 @@ module control_lut (
                 control_signals = lut[instruction];
             end
             WRITEBACK: begin
-                if (instruction[3:0] == LOAD) begin
-                    control_signals = WRITEBACK_CONTROL_SIGNALS_LOAD;
-                end else begin
-                    control_signals = WRITEBACK_CONTROL_SIGNALS;
-                end
+                control_signals = WRITEBACK_CONTROL_SIGNALS;
             end
             OUTPUT: begin
                 control_signals = OUTPUT_CONTROL_SIGNALS;

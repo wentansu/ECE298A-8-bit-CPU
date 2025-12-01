@@ -57,6 +57,8 @@ module tt_um_8_bit_cpu (
   wire [7:0] pc_out;
   wire pc_load = 0;
   wire pc_inc  = (state == OUTPUT) ? 1 : 0;
+  wire send_ins = (state == OUTPUT) ? 1 : 0;
+  wire status = 0;
 
   counter pc (
     .ui_in(pc_in),
@@ -143,8 +145,8 @@ module tt_um_8_bit_cpu (
   localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
 
   assign uio_oe = 8'hFF;
-  assign uio_out = {pc_out[7:0]};
-  assign uo_out = out ? acc_out : 8'bZ;
+  assign uio_out = {send_ins, status, pc_out[5:0]};
+  assign uo_out = (out && state == OUTPUT) ? acc_out : 8'bZ;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -153,15 +155,9 @@ module tt_um_8_bit_cpu (
       case (state)
         FETCH: state <= DECODE;
         DECODE: state <= EXECUTE;
-        EXECUTE: begin
-          state <= WRITEBACK;
-        end
-        WRITEBACK: begin
-          state <= OUTPUT;
-        end
-        OUTPUT: begin
-          state <= FETCH;
-        end
+        EXECUTE: state <= WRITEBACK;
+        WRITEBACK: state <= OUTPUT;
+        OUTPUT: state <= FETCH;
         default: state <= FETCH;
       endcase
     end
@@ -169,7 +165,7 @@ module tt_um_8_bit_cpu (
 
   // List unused signals
   wire _unused = &{
-      uio_in, ena, control_signals[15:14], control_signals[8], control_signals[6], pc_out[7:6]
+      uio_in, ena, control_signals[15:14], control_signals[8], pc_out[7:6]
   };
 
 endmodule

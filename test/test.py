@@ -106,12 +106,25 @@ async def test_project(dut):
     print("Output:", dut.uo_out.value)
 
     # SHL B = 30
-    dut.ui_in.value = 0b01100011
+    dut.ui_in.value = 0b00100011
     await ClockCycles(dut.clk, 1)
 
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 
+    # NOT Acc
+    dut.ui_in.value = 0b00111000
+    await ClockCycles(dut.clk, 1)
+    # dut.ui_in.value = 0b00000111
+    await ClockCycles(dut.clk, 4)
+    print("Output:", dut.uo_out.value)
+
+    # LOAD Acc <= Reg A
+    dut.ui_in.value = 0b01111010
+    await ClockCycles(dut.clk, 1)
+    # dut.ui_in.value = 0b00001010
+    await ClockCycles(dut.clk, 4)
+    print("Output:", dut.uo_out.value)
 
     # Keep testing the module by changing the input values, waiting for
     # one or more clock cycles, and asserting the expected output values.

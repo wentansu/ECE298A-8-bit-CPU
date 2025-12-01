@@ -34,7 +34,7 @@ module logic_unit8 (
             4'h6: y = a | b;         // OR
             4'h7: y = a ^ b;         // XOR
             4'h8: y = (operand == 0) ? ~a : ~b; // NOT
-            4'hA: y = b;                // LOAD
+            4'hA: y = (operand == 0) ? a : b;                // LOAD
             4'hB: y = {7'b0, (a < b)};  // LESS
             4'hC: y = {7'b0, (a == b)}; // EQUAL
             4'hD: y = {7'b0, (a > b)};  // GREATER
