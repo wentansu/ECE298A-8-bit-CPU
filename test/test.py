@@ -67,19 +67,49 @@ async def test_project(dut):
     #     await ClockCycles(dut.clk, 1)
     #     print(dut.uio_out.value)
 
-    await ClockCycles(dut.clk, 5)
+    await ClockCycles(dut.clk, 6)
 
+    # LOAD A 8
     dut.ui_in.value = 0b00011010
 
     await ClockCycles(dut.clk, 1)
 
     dut.ui_in.value = 0b00001000
 
+    await ClockCycles(dut.clk, 4)
+    print("Output:", dut.uo_out.value)
+
+    # ADD A 1
+    dut.ui_in.value = 0b00010001
     await ClockCycles(dut.clk, 1)
-    
+
+    dut.ui_in.value = 0b00000001
+
+    await ClockCycles(dut.clk, 4)
+    print("Output:", dut.uo_out.value)
+
+    # AND A ACC
+    dut.ui_in.value = 0b11010101
     await ClockCycles(dut.clk, 1)
-    
+
+    await ClockCycles(dut.clk, 4)
+    print("Output:", dut.uo_out.value)
+
+    # LOAD B 15
+    dut.ui_in.value = 0b00101010
+
     await ClockCycles(dut.clk, 1)
+
+    dut.ui_in.value = 0b00001111
+
+    await ClockCycles(dut.clk, 4)
+    print("Output:", dut.uo_out.value)
+
+    # OR A B
+    dut.ui_in.value = 0b10010110
+    await ClockCycles(dut.clk, 1)
+
+    await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 
 

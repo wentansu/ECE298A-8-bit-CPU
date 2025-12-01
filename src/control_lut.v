@@ -1,6 +1,6 @@
 module control_lut (
     input  wire [7:0] instruction,
-    input  wire [1:0] state,
+    input  wire [2:0] state,
     output reg  [15:0] control_signals
 );
 
@@ -10,11 +10,12 @@ module control_lut (
     `define IS_IN_NTYPE(val) ((val==4'h0))
     `define IS_IN_ITYPE(val) ((val==2'b0))
 
-    // State[1:0]
-    localparam FETCH     = 2'b00;
-    localparam DECODE    = 2'b01;
-    localparam EXECUTE   = 2'b10;
-    localparam WRITEBACK = 2'b11;
+    // State[2:0]
+    localparam FETCH     = 3'b000;
+    localparam DECODE    = 3'b001;
+    localparam EXECUTE   = 3'b010;
+    localparam WRITEBACK = 3'b011;
+    localparam OUTPUT    = 3'b100;
 
     // Control signals
     localparam [15:0] FETCH_CONTROL_SIGNALS               = 16'h0400;
@@ -22,6 +23,7 @@ module control_lut (
     localparam [15:0] DECODE_CONTROL_SIGNALS              = 16'h0000;
     localparam [15:0] WRITEBACK_CONTROL_SIGNALS           = 16'h3880;
     localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0000;
+    localparam [15:0] OUTPUT_CONTROL_SIGNALS              = 16'h0080;
 
     localparam [3:0] LOAD = 4'hA;
 
@@ -149,6 +151,9 @@ module control_lut (
                 end else begin
                     control_signals = WRITEBACK_CONTROL_SIGNALS;
                 end
+            end
+            OUTPUT: begin
+                control_signals = OUTPUT_CONTROL_SIGNALS;
             end
         endcase
     end

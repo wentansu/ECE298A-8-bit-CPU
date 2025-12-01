@@ -23,13 +23,14 @@ module tt_um_8_bit_cpu (
 );
 
   wire [7:0] instruction;
-  reg [1:0] state;
+  reg [2:0] state;
   wire [15:0] control_signals;
 
-  localparam FETCH     = 2'b00;
-  localparam DECODE    = 2'b01;
-  localparam EXECUTE   = 2'b10;
-  localparam WRITEBACK = 2'b11;
+  localparam FETCH     = 3'b000;
+  localparam DECODE    = 3'b001;
+  localparam EXECUTE   = 3'b010;
+  localparam WRITEBACK = 3'b011;
+  localparam OUTPUT    = 3'b100;
 
   localparam ZERO = 8'b0;
 
@@ -132,14 +133,6 @@ module tt_um_8_bit_cpu (
     .rst_n(rst_n)
   );
 
-  register outReg (
-    .mode(!out),
-    .uo_out(uo_out),
-    .uio_in(acc_out),
-    .clk(clk),
-    .rst_n(rst_n)
-  );
-
   // Control signals
   localparam [15:0] FETCH_CONTROL_SIGNALS               = 16'h0400;
   localparam [15:0] DECODE_CONTROL_SIGNALS_I_TYPE       = {4'h0, 4'h2, 8'h00};
@@ -148,7 +141,8 @@ module tt_um_8_bit_cpu (
   localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
 
   assign uio_oe = 8'hFF;
-  assign uio_out = {pc_out[5:0], state};
+  assign uio_out = {pc_out[4:0], state};
+  assign uo_out = out ? acc_out : 8'bZ;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -157,8 +151,15 @@ module tt_um_8_bit_cpu (
       case (state)
         FETCH: state <= DECODE;
         DECODE: state <= EXECUTE;
-        EXECUTE: state <= WRITEBACK;
-        WRITEBACK: state <= FETCH;
+        EXECUTE: begin
+          state <= WRITEBACK;
+        end
+        WRITEBACK: begin
+          state <= OUTPUT;
+        end
+        OUTPUT: begin
+          state <= FETCH;
+        end
         default: state <= FETCH;
       endcase
     end
