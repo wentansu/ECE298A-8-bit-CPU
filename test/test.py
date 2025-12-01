@@ -105,8 +105,7 @@ async def test_project(dut):
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 
-    # OR A B
-    dut.ui_in.value = 0b10010110
+    dut.ui_in.value = 0b01010100
     await ClockCycles(dut.clk, 1)
 
     await ClockCycles(dut.clk, 4)

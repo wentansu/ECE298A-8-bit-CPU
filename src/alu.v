@@ -48,11 +48,10 @@ endmodule
 // ---------------------------------------------------------------------------
 module shifter8 (
     input  wire [7:0] a,
-    input  wire [2:0] shamt,
     input  wire       dir,      // 0 = left, 1 = right
     output wire [7:0] y
 );
-    assign y = dir ? (a >> shamt) : (a << shamt);
+    assign y = dir ? (a >> 1) : (a << 1);
 endmodule
 
 module alu (
@@ -70,7 +69,6 @@ module alu (
 
     wire [7:0] A = ui_in;
     wire [7:0] B = uio_in;
-    wire [2:0] shamt = uio_in[2:0];
 
     // ---------------------- Submodule outputs -------------------------------
     // ADD
@@ -100,7 +98,6 @@ module alu (
 
     shifter8 u_shifter8 (
         .a     (A),
-        .shamt (shamt),
         .dir   (left_right),
         .y     (shift_y)
     );

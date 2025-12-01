@@ -55,7 +55,7 @@ module tt_um_8_bit_cpu (
   wire [7:0] pc_in = 8'b0;
   wire [7:0] pc_out;
   wire pc_load = 0;
-  wire pc_inc  = 1;
+  wire pc_inc  = state == OUTPUT ? 1 : 0;
 
   counter pc (
     .ui_in(pc_in),
@@ -141,7 +141,7 @@ module tt_um_8_bit_cpu (
   localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
 
   assign uio_oe = 8'hFF;
-  assign uio_out = {pc_out[4:0], state};
+  assign uio_out = {pc_out[7:0]};
   assign uo_out = out ? acc_out : 8'bZ;
 
   always @(posedge clk or negedge rst_n) begin
