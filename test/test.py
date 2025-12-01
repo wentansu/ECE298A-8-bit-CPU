@@ -79,21 +79,21 @@ async def test_project(dut):
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 
-    # ADD A 1 = 9
-    dut.ui_in.value = 0b00010001
-    await ClockCycles(dut.clk, 1)
+    # # ADD A 1 = 9
+    # dut.ui_in.value = 0b00010001
+    # await ClockCycles(dut.clk, 1)
 
-    dut.ui_in.value = 0b00000001
+    # dut.ui_in.value = 0b00000001
 
-    await ClockCycles(dut.clk, 4)
-    print("Output:", dut.uo_out.value)
+    # await ClockCycles(dut.clk, 4)
+    # print("Output:", dut.uo_out.value)
 
-    # AND A ACC = 8
-    dut.ui_in.value = 0b11010101
-    await ClockCycles(dut.clk, 1)
+    # # AND A ACC = 8
+    # dut.ui_in.value = 0b11010101
+    # await ClockCycles(dut.clk, 1)
 
-    await ClockCycles(dut.clk, 4)
-    print("Output:", dut.uo_out.value)
+    # await ClockCycles(dut.clk, 4)
+    # print("Output:", dut.uo_out.value)
 
     # LOAD B 15
     dut.ui_in.value = 0b00101010
@@ -125,6 +125,14 @@ async def test_project(dut):
     # dut.ui_in.value = 0b00001010
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
+
+    # Invalid
+    dut.ui_in.value = 0b11111111
+    await ClockCycles(dut.clk, 1)
+    print("Output:", dut.uo_out.value)
+    # dut.ui_in.value = 0b00001010
+    await ClockCycles(dut.clk, 6)
+    # print("Output:", dut.uo_out.value)
 
     # Keep testing the module by changing the input values, waiting for
     # one or more clock cycles, and asserting the expected output values.

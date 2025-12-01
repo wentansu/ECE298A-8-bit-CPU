@@ -55,7 +55,9 @@ module control_lut (
             end else if (`IS_RTYPE(i[3:0])) begin
                 // R type instructions
                 // Source 1 is always Reg A
-                lut[i[7:0]] = {8'h00, 2'b00, i[7:6], i[3:0]};
+                if (i[5:4] == 2'b01 && i[7:6] != 2'b01) begin
+                    lut[i[7:0]] = {8'h00, 2'b00, i[7:6], i[3:0]};
+                end
             end else if (`IS_OTYPE(i[3:0])) begin
                 // O type instructions
                 // Operand is selected from Reg A and output of multiplexer
@@ -79,7 +81,11 @@ module control_lut (
     always @(*) begin
         case (state)
             FETCH: begin
-                control_signals = FETCH_CONTROL_SIGNALS;
+                if (lut[instruction] == 16'h0) begin
+                    control_signals = 16'h0;
+                end else begin
+                    control_signals = FETCH_CONTROL_SIGNALS;
+                end
             end
             DECODE: begin
                 if (`IS_ITYPE(instruction[7:6])) begin
