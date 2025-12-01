@@ -24,6 +24,7 @@ endmodule
 module logic_unit8 (
     input  wire [7:0] a,
     input  wire [7:0] b,
+    input  wire       operand,
     input  wire [3:0] sel,
     output reg  [7:0] y
 );
@@ -32,10 +33,11 @@ module logic_unit8 (
             4'h5: y = a & b;         // AND
             4'h6: y = a | b;         // OR
             4'h7: y = a ^ b;         // XOR
-            4'h8: y = ~a;            // NOT
-            4'hB: y = {7'b0, (a < b)};
-            4'hC: y = {7'b0, (a == b)};
-            4'hD: y = {7'b0, (a > b)};
+            4'h8: y = (operand == 0) ? ~a : ~b; // NOT
+            4'hA: y = b;                // LOAD
+            4'hB: y = {7'b0, (a < b)};  // LESS
+            4'hC: y = {7'b0, (a == b)}; // EQUAL
+            4'hD: y = {7'b0, (a > b)};  // GREATER
             default: y = 8'h00;       // unused / safe default
         endcase
     end
@@ -48,10 +50,13 @@ endmodule
 // ---------------------------------------------------------------------------
 module shifter8 (
     input  wire [7:0] a,
+    input  wire [7:0] b,
+    input  wire       operand,
     input  wire       dir,      // 0 = left, 1 = right
     output wire [7:0] y
 );
-    assign y = dir ? (a >> 1) : (a << 1);
+    wire [7:0] o = (operand == 0) ? a : b;
+    assign y = dir ? (o >> 1) : (o << 1);
 endmodule
 
 module alu (
@@ -59,7 +64,8 @@ module alu (
     input  wire [7:0] ui_in,
     input  wire [7:0] uio_in,
     output wire [7:0] uo_out,
-    input  wire [3:0] alu_op,    
+    input  wire [3:0] alu_op, 
+    input  wire       alu_operand,   
     input  wire       clk,
     input  wire       rst_n
 );
@@ -88,6 +94,7 @@ module alu (
     logic_unit8 u_logic8 (
         .a   (A),
         .b   (B),
+        .operand(alu_operand),
         .sel (func_sel),
         .y   (logic_y)
     );
@@ -98,6 +105,8 @@ module alu (
 
     shifter8 u_shifter8 (
         .a     (A),
+        .b     (B),
+        .operand(alu_operand),
         .dir   (left_right),
         .y     (shift_y)
     );
@@ -122,31 +131,31 @@ module alu (
             4'h3: begin
                 // shift left
                 alu_y    = shift_y;
-                // alu_flag = 1'b0;
+                
             end
             4'h4: begin
                 // shift right
                 // shift right
                 alu_y    = shift_y;
-                // alu_flag = 1'b0;
+                
             end
 
             4'h5: begin
                 // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
-                // alu_flag = 1'b0;
+                
             end
 
             4'h6: begin
                 // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
-                // alu_flag = 1'b0;
+                
             end
 
             4'h7: begin
                 // logic ops: AND, OR, XOR, NOT
                 alu_y    = logic_y;
-                // alu_flag = 1'b0;
+                
             end
             4'h8: begin
                 // logic ops: AND, OR, XOR, NOT
@@ -155,33 +164,33 @@ module alu (
             end
 
             4'hA: begin
-                alu_y = uio_in;
-                // alu_flag = 1'b0;
+                alu_y = logic_y;
+                
             end
 
             4'hB: begin
                 alu_y    = logic_y;
-                // alu_flag = 1'b0;
+                
             end
 
             4'hC: begin
                 alu_y    = logic_y;
-                // alu_flag = 1'b0;
+                
             end
 
             4'hD: begin
                 alu_y    = logic_y;
-                // alu_flag = 1'b0;
+                
             end
 
             4'h0: begin
                 alu_y = 8'h00;
-                // alu_flag = 1'b0;
+                
             end
 
             default: begin
                 alu_y    = 8'h00;
-                // alu_flag = 1'b0;
+                
             end
         endcase
     end

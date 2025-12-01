@@ -5,10 +5,10 @@ module control_lut (
 );
 
     // Check if instruction is R type or O type
-    `define IS_IN_RTYPE(val) ((val==4'h1)||(val==4'h2)||(val==4'h5)||(val==4'h6)||(val==4'h7)||(val==4'hB)||(val==4'hC)||(val==4'hD))
-    `define IS_IN_OTYPE(val) ((val==4'h3)||(val==4'h4)||(val==4'h8))
-    `define IS_IN_NTYPE(val) ((val==4'h0))
-    `define IS_IN_ITYPE(val) ((val==2'b0))
+    `define IS_RTYPE(val) ((val==4'h1)||(val==4'h2)||(val==4'h5)||(val==4'h6)||(val==4'h7)||(val==4'hB)||(val==4'hC)||(val==4'hD))
+    `define IS_OTYPE(val) ((val==4'h3)||(val==4'h4)||(val==4'h8))
+    `define IS_NTYPE(val) ((val==4'h0))
+    `define IS_ITYPE(val) ((val==2'b0))
 
     // State[2:0]
     localparam FETCH     = 3'b000;
@@ -28,7 +28,6 @@ module control_lut (
     localparam [3:0] LOAD = 4'hA;
 
     reg [15:0] lut [0:255]; // LUT
-    wire [7:0] index = instruction; // Index of LUT element
 
     // Initialize LUT
     initial begin
@@ -40,21 +39,24 @@ module control_lut (
         // EXECUTE
         for (integer i = 0; i < 256; i = i + 1) begin
             if (i[3:0] == LOAD) begin
-                // Load
-                // Not using ALU
-                lut[i[7:0]] = {2'b00, i[5:4], 4'h8, 2'b00, 2'b00, 4'h0};
-            end else if (`IS_IN_RTYPE(i[3:0])) begin
+                // LOAD
+                // ALUSrc is always immediate
+                lut[i[7:0]] = {2'b00, i[5:4], 4'h8, 2'b01, 2'b00, 4'hA};
+            end else if (`IS_RTYPE(i[3:0])) begin
                 // R type instructions
                 // Assume Source 1 is always Reg A
                 lut[i[7:0]] = {8'h00, 2'b00, i[7:6], i[3:0]};
-            end else if (`IS_IN_OTYPE(i[3:0])) begin
+            end else if (`IS_OTYPE(i[3:0])) begin
                 // O type instructions
-                // Assume Source is always Reg A
+                // Operand is selected from Reg A and output of multiplexer
+                // Source 2 must be 00
                 if (i[7:6] == 2'b00) begin
-                    // Using immediate value (I type)
-                    lut[i[7:0]] = {8'h00, 2'b00, 2'b00, i[3:0]};
-                end else if (i[7:6] == 2'b01) begin
-                    lut[i[7:0]] = {8'h00, 2'b00, 2'b01, i[3:0]};
+                    // Reg A
+                    if (i[5:4] == 2'b01) begin
+                        lut[i[7:0]] = {8'h00, 2'b00, 2'b01, i[3:0]};
+                    end else begin
+                        lut[i[7:0]] = {8'h00, 2'b01, i[5:4], i[3:0]};
+                    end
                 end
             end
         end    
@@ -70,14 +72,14 @@ module control_lut (
                 control_signals = FETCH_CONTROL_SIGNALS;
             end
             DECODE: begin
-                if (`IS_IN_ITYPE(instruction[7:6])) begin
+                if (`IS_ITYPE(instruction[7:6])) begin
                     control_signals = DECODE_CONTROL_SIGNALS_I_TYPE;
                 end else begin
                     control_signals = DECODE_CONTROL_SIGNALS;
                 end
             end
             EXECUTE: begin
-                control_signals = lut[index];
+                control_signals = lut[instruction];
             end
             WRITEBACK: begin
                 if (instruction[3:0] == LOAD) begin

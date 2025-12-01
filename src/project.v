@@ -42,6 +42,7 @@ module tt_um_8_bit_cpu (
 
   wire [3:0] alu_op = control_signals[3:0];
   wire [1:0] alu_src = control_signals[5:4];
+  wire alu_operand = control_signals[6];
   wire out = control_signals[7];
   wire immediate_load = control_signals[9];
   wire instruction_load = control_signals[10];
@@ -55,7 +56,7 @@ module tt_um_8_bit_cpu (
   wire [7:0] pc_in = 8'b0;
   wire [7:0] pc_out;
   wire pc_load = 0;
-  wire pc_inc  = state == OUTPUT ? 1 : 0;
+  wire pc_inc  = (state == OUTPUT) ? 1 : 0;
 
   counter pc (
     .ui_in(pc_in),
@@ -118,6 +119,7 @@ module tt_um_8_bit_cpu (
 
   alu alu_unit (
     .alu_op(alu_op),
+    .alu_operand(alu_operand),
     .ui_in(regA_out),
     .uo_out(alu_result),
     .uio_in(alu_src2),

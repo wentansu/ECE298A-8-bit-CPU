@@ -79,7 +79,7 @@ async def test_project(dut):
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 
-    # ADD A 1
+    # ADD A 1 = 9
     dut.ui_in.value = 0b00010001
     await ClockCycles(dut.clk, 1)
 
@@ -88,7 +88,7 @@ async def test_project(dut):
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 
-    # AND A ACC
+    # AND A ACC = 8
     dut.ui_in.value = 0b11010101
     await ClockCycles(dut.clk, 1)
 
@@ -105,7 +105,8 @@ async def test_project(dut):
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 
-    dut.ui_in.value = 0b01010100
+    # SHL B = 30
+    dut.ui_in.value = 0b01100011
     await ClockCycles(dut.clk, 1)
 
     await ClockCycles(dut.clk, 4)
