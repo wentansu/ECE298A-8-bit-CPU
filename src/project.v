@@ -59,6 +59,7 @@ module tt_um_8_bit_cpu (
   wire pc_inc  = (state == OUTPUT || status) ? 1 : 0;
   wire send_ins = (state == OUTPUT) ? 1 : 0;
   reg status;
+  wire invalid_ins = (state == DECODE) && (instruction != 8'h0) && (control_signals == 16'h0);
 
   counter pc (
     .ui_in(pc_in),
@@ -145,8 +146,8 @@ module tt_um_8_bit_cpu (
   localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
 
   assign uio_oe = 8'hFF;
-  assign uio_out = {send_ins, status, pc_out[5:0]};
-  assign uo_out = (status == 0 && out && state == OUTPUT) ? acc_out : 8'bZ;
+  assign uio_out = {send_ins, invalid_ins, pc_out[5:0]};
+  assign uo_out = (invalid_ins == 0 && out && state == OUTPUT) ? acc_out : 8'bZ;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -154,19 +155,21 @@ module tt_um_8_bit_cpu (
     end else begin
       case (state)
         FETCH: begin
-          if (control_signals == 16'h0 && instruction != 8'h0) begin
-            status <= 1;
-            state <= OUTPUT;
-          end else begin
             state <= DECODE;
+            status <= 0;
+        end
+        DECODE: begin
+          if (invalid_ins) begin
+            status <= 1;
+            state <= FETCH;
+          end else begin
+            state <= EXECUTE;
           end
         end
-        DECODE: state <= EXECUTE;
         EXECUTE: state <= WRITEBACK;
         WRITEBACK: state <= OUTPUT;
         OUTPUT: begin
           state <= FETCH;
-          status <= 0;
         end
         default: begin
           state <= FETCH;

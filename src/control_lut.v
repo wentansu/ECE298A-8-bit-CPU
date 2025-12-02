@@ -81,17 +81,17 @@ module control_lut (
     always @(*) begin
         case (state)
             FETCH: begin
+                control_signals = FETCH_CONTROL_SIGNALS;
+            end
+            DECODE: begin
                 if (lut[instruction] == 16'h0) begin
                     control_signals = 16'h0;
                 end else begin
-                    control_signals = FETCH_CONTROL_SIGNALS;
-                end
-            end
-            DECODE: begin
-                if (`IS_ITYPE(instruction[7:6])) begin
-                    control_signals = DECODE_CONTROL_SIGNALS_I_TYPE;
-                end else begin
-                    control_signals = DECODE_CONTROL_SIGNALS;
+                    if (`IS_ITYPE(instruction[7:6])) begin
+                        control_signals = DECODE_CONTROL_SIGNALS_I_TYPE;
+                    end else begin
+                        control_signals = DECODE_CONTROL_SIGNALS;
+                    end
                 end
             end
             EXECUTE: begin
