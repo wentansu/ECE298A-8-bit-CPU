@@ -44,6 +44,7 @@ module tt_um_8_bit_cpu (
   wire [1:0] alu_src = control_signals[5:4];
   wire alu_operand = control_signals[6];
   wire out = control_signals[7];
+  wire pc_load = control_signals[8];
   wire immediate_load = control_signals[9];
   wire instruction_load = control_signals[10];
   wire reg_write = control_signals[11];
@@ -53,17 +54,16 @@ module tt_um_8_bit_cpu (
   wire reg_write_B = (reg_write == 1 && reg_dest == 2'b10) ? 1 : 0;
   wire reg_write_acc = (reg_write == 1 && reg_dest == 2'b11) ? 1 : 0;
 
-  wire [7:0] pc_in = 8'b0;
+  reg branch;
   wire [7:0] pc_out;
-  wire pc_load = 0;
-  wire pc_inc  = (state == OUTPUT || status) ? 1 : 0;
-  wire send_ins = (state == OUTPUT) ? 1 : 0;
-  reg status;
+
+  wire pc_inc  = ((state == OUTPUT) || invalid_ins) && !branch;
+  wire send_ins = (state == OUTPUT) || invalid_ins;
   wire invalid_ins = (state == DECODE) && (instruction != 8'h0) && (control_signals == 16'h0);
 
   counter pc (
-    .ui_in(pc_in),
-    .load(pc_load),
+    .ui_in(immediate),
+    .load(branch),
     .uo_out(pc_out),
     .clk(clk),
     .inc(pc_inc)
@@ -138,13 +138,6 @@ module tt_um_8_bit_cpu (
     .rst_n(rst_n)
   );
 
-  // Control signals
-  localparam [15:0] FETCH_CONTROL_SIGNALS               = 16'h0400;
-  localparam [15:0] DECODE_CONTROL_SIGNALS_I_TYPE       = {4'h0, 4'h2, 8'h00};
-  localparam [15:0] DECODE_CONTROL_SIGNALS              = 16'h0000;
-  localparam [15:0] WRITEBACK_CONTROL_SIGNALS           = 16'h3880;
-  localparam [15:0] WRITEBACK_CONTROL_SIGNALS_LOAD      = 16'h0800;
-
   assign uio_oe = 8'hFF;
   assign uio_out = {send_ins, invalid_ins, pc_out[5:0]};
   assign uo_out = (invalid_ins == 0 && out && state == OUTPUT) ? acc_out : 8'bZ;
@@ -156,24 +149,28 @@ module tt_um_8_bit_cpu (
       case (state)
         FETCH: begin
             state <= DECODE;
-            status <= 0;
+            branch <= 0;
         end
         DECODE: begin
           if (invalid_ins) begin
-            status <= 1;
             state <= FETCH;
           end else begin
             state <= EXECUTE;
           end
         end
-        EXECUTE: state <= WRITEBACK;
-        WRITEBACK: state <= OUTPUT;
+        EXECUTE: begin
+          state <= WRITEBACK;
+          branch <= pc_load;
+        end
+        WRITEBACK: begin
+          state <= OUTPUT;
+          branch <= branch && alu_result;
+        end
         OUTPUT: begin
           state <= FETCH;
         end
         default: begin
           state <= FETCH;
-          status <= 0;
         end
       endcase
     end
@@ -181,7 +178,7 @@ module tt_um_8_bit_cpu (
 
   // List unused signals
   wire _unused = &{
-      uio_in, ena, control_signals[15:14], control_signals[8], pc_out[7:6]
+      uio_in, ena, control_signals[15:14], pc_out[7:6]
   };
 
 endmodule

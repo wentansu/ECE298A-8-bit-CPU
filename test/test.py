@@ -21,29 +21,18 @@ INSTRUCTIONS = [
     {"name": "EQUAL",      "opcode": 0xD, "type": ["R", "I"]},
 ]
 
-TYPES = {
-    "R": [1, 9, 13],
-    "O": [5],
-    "I": [1],
-    "N": [0]
-}
-
 @cocotb.test()
 async def test_project(dut):
     dut._log.info("Start")
 
-    # Set the clock period to 1 us (1 MHz)
-    clock = Clock(dut.clk, 1, unit="us")
+    # Set the clock period to 40 ns (25 MHz)
+    clock = Clock(dut.clk, 40, unit="ns")
     cocotb.start_soon(clock.start())
 
     # Reset
     dut._log.info("Reset")
     dut.ena.value = 1
-    # dut.ui_in.value = 0
-    dut.uio_in.value = 0
-    # dut.rst_n.value = 0
-    # await ClockCycles(dut.clk, 10)
-    # dut.rst_n.value = 1
+    dut.ui_in.value = 0
 
     dut._log.info("Test project behavior")
 
@@ -63,61 +52,46 @@ async def test_project(dut):
     #             # Change it to match the actual expected output of your module:
     #             print(f"{sources:04b} {instruction['name'].rjust(5)} {str(instruction['type']).rjust(10)}", dut.uio_out.value, dut.uo_out.value)
 
-    # for i in range (12):
-    #     await ClockCycles(dut.clk, 1)
-    #     print(dut.uio_out.value)
-
     await ClockCycles(dut.clk, 6)
 
     # LOAD A 8
     dut.ui_in.value = 0b00011010
-
     await ClockCycles(dut.clk, 1)
-
     dut.ui_in.value = 0b00001000
-
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 
     # # ADD A 1 = 9
     # dut.ui_in.value = 0b00010001
     # await ClockCycles(dut.clk, 1)
-
     # dut.ui_in.value = 0b00000001
-
     # await ClockCycles(dut.clk, 4)
     # print("Output:", dut.uo_out.value)
 
     # # AND A ACC = 8
     # dut.ui_in.value = 0b11010101
     # await ClockCycles(dut.clk, 1)
-
     # await ClockCycles(dut.clk, 4)
     # print("Output:", dut.uo_out.value)
 
-    # LOAD B 15
+    # LOAD B 0
     dut.ui_in.value = 0b00101010
-
     await ClockCycles(dut.clk, 1)
-
-    dut.ui_in.value = 0b00001111
-
+    dut.ui_in.value = 0b00000000
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 
-    # SHL B = 30
-    dut.ui_in.value = 0b00100011
-    await ClockCycles(dut.clk, 1)
+    # # SHL B = 30
+    # dut.ui_in.value = 0b00100011
+    # await ClockCycles(dut.clk, 1)
+    # await ClockCycles(dut.clk, 4)
+    # print("Output:", dut.uo_out.value)
 
-    await ClockCycles(dut.clk, 4)
-    print("Output:", dut.uo_out.value)
-
-    # NOT Acc
-    dut.ui_in.value = 0b00111000
-    await ClockCycles(dut.clk, 1)
-    # dut.ui_in.value = 0b00000111
-    await ClockCycles(dut.clk, 4)
-    print("Output:", dut.uo_out.value)
+    # # NOT Acc
+    # dut.ui_in.value = 0b00111000
+    # await ClockCycles(dut.clk, 1)
+    # await ClockCycles(dut.clk, 4)
+    # print("Output:", dut.uo_out.value)
 
     # LOAD Acc <= Reg A
     # dut.ui_in.value = 0b01111010
@@ -126,17 +100,23 @@ async def test_project(dut):
     # await ClockCycles(dut.clk, 4)
     # print("Output:", dut.uo_out.value)
 
-    # Invalid
-    dut.ui_in.value = 0b11111111
-    await ClockCycles(dut.clk, 1)
-    print("Output:", dut.uo_out.value)
-    # dut.ui_in.value = 0b00001010
-    await ClockCycles(dut.clk, 1)
+    # # Invalid
+    # dut.ui_in.value = 0b11111111
+    # await ClockCycles(dut.clk, 1)
+    # print("Output:", dut.uo_out.value)
+    # await ClockCycles(dut.clk, 1)
     
-    # NOT Acc
-    dut.ui_in.value = 0b00111000
+    # BEZ B 15
+    dut.ui_in.value = 0b00101110
     await ClockCycles(dut.clk, 1)
-    # dut.ui_in.value = 0b00000111
+    dut.ui_in.value = 0b00001111
+    await ClockCycles(dut.clk, 4)
+    print("Output:", dut.uo_out.value)
+
+    # JUMP 1
+    dut.ui_in.value = 0b00001001
+    await ClockCycles(dut.clk, 1)
+    dut.ui_in.value = 0b00000001
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 

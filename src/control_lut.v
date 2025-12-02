@@ -7,7 +7,8 @@ module control_lut (
     // Check if instruction is R type or O type
     `define IS_RTYPE(val) ((val==4'h1)||(val==4'h2)||(val==4'h5)||(val==4'h6)||(val==4'h7)||(val==4'hB)||(val==4'hC)||(val==4'hD))
     `define IS_OTYPE(val) ((val==4'h3)||(val==4'h4)||(val==4'h8))
-    `define IS_NTYPE(val) ((val==4'h0))
+    `define IS_JTYPE(val) ((val==4'h9))
+    `define IS_BTYPE(val) ((val==4'hE)||(val==4'hF))
     `define IS_ITYPE(val) ((val==2'b0))
 
     // State[2:0]
@@ -37,7 +38,25 @@ module control_lut (
 
         // EXECUTE
         for (integer i = 0; i < 256; i = i + 1) begin
-            if (i[3:0] == LOAD) begin
+            if (`IS_JTYPE(i[3:0])) begin
+                // JUMP
+                // Source 2 and 1 must be 00
+                if (i[7:4] == 4'h0) begin
+                    lut[i[7:0]] = {4'h0, 4'h1, 2'b01, 2'b11, i[3:0]};
+                end
+            end else if (`IS_BTYPE(i[3:0])) begin
+                // BEZ or BNEZ
+                // Source 2 must be 00, source 1 cannot be imm
+                if (i[7:6] == 2'b00 && i[5:4] != 2'b00) begin
+                    if (i[5:4] == 2'b01) begin
+                        // Reg A
+                        lut[i[7:0]] = {4'h0, 4'h1, 2'b10, 2'b01, i[3:0]};
+                    end else begin
+                        // Reg B or Acc
+                        lut[i[7:0]] = {4'h0, 4'h1, 2'b11, i[5:4], i[3:0]};
+                    end
+                end
+            end else if (i[3:0] == LOAD) begin
                 // LOAD
                 if (i[7:6] != 2'b11 && i[5:4] == 2'b11) begin
                     // Destination is Acc
