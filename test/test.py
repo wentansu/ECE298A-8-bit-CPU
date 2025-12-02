@@ -52,7 +52,11 @@ async def test_project(dut):
     #             # Change it to match the actual expected output of your module:
     #             print(f"{sources:04b} {instruction['name'].rjust(5)} {str(instruction['type']).rjust(10)}", dut.uio_out.value, dut.uo_out.value)
 
-    await ClockCycles(dut.clk, 6)
+    # Reset
+    dut.rst_n.value = 0
+    await ClockCycles(dut.clk, 1)
+    dut.rst_n.value = 1
+    await ClockCycles(dut.clk, 5)
 
     # LOAD A 8
     dut.ui_in.value = 0b00011010
@@ -117,6 +121,18 @@ async def test_project(dut):
     dut.ui_in.value = 0b00001001
     await ClockCycles(dut.clk, 1)
     dut.ui_in.value = 0b00000001
+    await ClockCycles(dut.clk, 4)
+    print("Output:", dut.uo_out.value)
+
+    # Reset
+    dut.rst_n.value = 0
+    await ClockCycles(dut.clk, 1)
+    dut.rst_n.value = 1
+    await ClockCycles(dut.clk, 5)
+
+    # NO OP
+    dut.ui_in.value = 0b0
+    await ClockCycles(dut.clk, 1)
     await ClockCycles(dut.clk, 4)
     print("Output:", dut.uo_out.value)
 

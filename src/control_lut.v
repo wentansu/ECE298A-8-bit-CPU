@@ -117,10 +117,18 @@ module control_lut (
                 control_signals = lut[instruction];
             end
             WRITEBACK: begin
-                control_signals = WRITEBACK_CONTROL_SIGNALS;
+                if (instruction == 8'h00) begin
+                    control_signals = 16'h0;
+                end else begin
+                    control_signals = WRITEBACK_CONTROL_SIGNALS;
+                end
             end
             OUTPUT: begin
-                control_signals = OUTPUT_CONTROL_SIGNALS;
+                if (instruction == 8'h00) begin
+                    control_signals = 16'h0;
+                end else begin
+                    control_signals = OUTPUT_CONTROL_SIGNALS;
+                end
             end
 
             default: begin

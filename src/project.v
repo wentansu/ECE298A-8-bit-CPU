@@ -25,6 +25,7 @@ module tt_um_8_bit_cpu (
   wire [7:0] instruction;
   reg [2:0] state;
   wire [15:0] control_signals;
+  reg reset;
 
   localparam FETCH     = 3'b000;
   localparam DECODE    = 3'b001;
@@ -76,7 +77,7 @@ module tt_um_8_bit_cpu (
     .uo_out(instruction),
     .uio_in(ui_in),
     .clk(clk),
-    .rst_n(rst_n)
+    .rst_n(reset)
   );
 
   register immediateReg (
@@ -84,7 +85,7 @@ module tt_um_8_bit_cpu (
     .uo_out(immediate),
     .uio_in(ui_in),
     .clk(clk),
-    .rst_n(rst_n)
+    .rst_n(reset)
   );
 
   wire [7:0] regA_out;
@@ -96,7 +97,7 @@ module tt_um_8_bit_cpu (
     .uo_out(regA_out),
     .uio_in(immediate),
     .clk(clk),
-    .rst_n(rst_n)
+    .rst_n(reset)
   );
 
   register regB (
@@ -104,7 +105,7 @@ module tt_um_8_bit_cpu (
     .uo_out(regB_out),
     .uio_in(immediate),
     .clk(clk),
-    .rst_n(rst_n)
+    .rst_n(reset)
   );
 
   wire [7:0] alu_src2;
@@ -127,7 +128,7 @@ module tt_um_8_bit_cpu (
     .uo_out(alu_result),
     .uio_in(alu_src2),
     .clk(clk),
-    .rst_n(rst_n)
+    .rst_n(reset)
   );
 
   register acc (
@@ -135,7 +136,7 @@ module tt_um_8_bit_cpu (
     .uo_out(acc_out),
     .uio_in(alu_result),
     .clk(clk),
-    .rst_n(rst_n)
+    .rst_n(reset)
   );
 
   assign uio_oe = 8'hFF;
@@ -144,11 +145,14 @@ module tt_um_8_bit_cpu (
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
+      // Reset
       state <= FETCH;
+      reset <= 0;
     end else begin
       case (state)
         FETCH: begin
             state <= DECODE;
+            reset <= 1;
             branch <= 0;
         end
         DECODE: begin
@@ -164,7 +168,7 @@ module tt_um_8_bit_cpu (
         end
         WRITEBACK: begin
           state <= OUTPUT;
-          branch <= branch && alu_result;
+          branch <= branch && (alu_result == 8'b1);
         end
         OUTPUT: begin
           state <= FETCH;
