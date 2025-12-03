@@ -56,10 +56,10 @@ async def send(dut, opcode: int, source_1: int, source_2: int, immediate: int) -
     if immediate: dut.ui_in.value = immediate
     await ClockCycles(dut.clk, 4)
     if int(dut.uio_out.value) >> 6 == 0b10:
-        print(f"RES: {dut.uo_out.value}")
+        dut._log.info(f"RES: {dut.uo_out.value}")
         return (int(dut.uio_out.value) & (0b00111111))
     else:
-        print(f"ERR: {dut.uo_out.value}")
+        dut._log.info(f"ERR: {dut.uo_out.value}")
         return -1
 
 @cocotb.test()
@@ -83,8 +83,8 @@ async def test_project(dut):
         if count == 64: break
         if i >= len(INSTRUCTIONS): break
         instruction = INSTRUCTIONS[i]
-        print(f"INS {i}: {instruction[2]:02b} {instruction[1]:02b} {instruction[0]:X}")
-        if instruction[3]: print(f"IMM: {instruction[3]}")
+        dut._log.info(f"INS {i}: {instruction[2]:02b} {instruction[1]:02b} {instruction[0]:X}")
+        if instruction[3]: dut._log.info(f"IMM: {instruction[3]}")
         result = await send(dut, instruction[0], instruction[1], instruction[2], instruction[3])
         if result < 0: break
         if result < (i + 1):
