@@ -50,6 +50,8 @@ module tt_um_8_bit_cpu (
   wire instruction_load = control_signals[10];
   wire reg_write = control_signals[11];
   wire [1:0] reg_dest = control_signals[13:12];
+  wire reg_src_A = control_signals[14];
+  wire reg_src_B = control_signals[15];
 
   wire reg_write_A = (reg_write == 1 && reg_dest == 2'b01) ? 1 : 0;
   wire reg_write_B = (reg_write == 1 && reg_dest == 2'b10) ? 1 : 0;
@@ -60,7 +62,7 @@ module tt_um_8_bit_cpu (
 
   wire pc_inc  = ((state == OUTPUT) || invalid_ins) && !branch;
   wire send_ins = (state == OUTPUT) || invalid_ins;
-  wire invalid_ins = (state == DECODE) && (instruction != 8'h0) && (control_signals == 16'h0);
+  wire invalid_ins = (state == DECODE) && (instruction != 8'h0) && (control_signals == 16'hFFFF);
 
   counter pc (
     .ui_in(immediate),
@@ -92,10 +94,31 @@ module tt_um_8_bit_cpu (
   wire [7:0] regB_out;
   wire [7:0] acc_out;
 
+  wire [7:0] reg_source_A_out;
+  wire [7:0] reg_source_B_out;
+
+  mux reg_source_A (
+    .a(immediate),
+    .b(acc_out),
+    .c(ZERO),
+    .d(ZERO),
+    .select({1'b0, reg_src_A}),
+    .out(reg_source_A_out)
+  );
+
+  mux reg_source_B (
+    .a(immediate),
+    .b(acc_out),
+    .c(ZERO),
+    .d(ZERO),
+    .select({1'b0, reg_src_B}),
+    .out(reg_source_B_out)
+  );
+
   register regA (
     .mode(reg_write_A),
     .uo_out(regA_out),
-    .uio_in(immediate),
+    .uio_in(reg_source_A_out),
     .clk(clk),
     .rst_n(reset)
   );
@@ -103,7 +126,7 @@ module tt_um_8_bit_cpu (
   register regB (
     .mode(reg_write_B),
     .uo_out(regB_out),
-    .uio_in(immediate),
+    .uio_in(reg_source_B_out),
     .clk(clk),
     .rst_n(reset)
   );
@@ -151,9 +174,14 @@ module tt_um_8_bit_cpu (
     end else begin
       case (state)
         FETCH: begin
-            state <= DECODE;
+          if (!reset) begin
+            state <= FETCH;
             reset <= 1;
             branch <= 0;
+          end else begin
+            state <= DECODE;
+            branch <= 0;
+          end
         end
         DECODE: begin
           if (invalid_ins) begin
@@ -182,7 +210,7 @@ module tt_um_8_bit_cpu (
 
   // List unused signals
   wire _unused = &{
-      uio_in, ena, control_signals[15:14], pc_out[7:6]
+      uio_in, ena, pc_out[7:6]
   };
 
 endmodule

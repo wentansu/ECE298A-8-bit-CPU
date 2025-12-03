@@ -67,9 +67,15 @@ module control_lut (
                         // Source is Reg B or Imm
                         lut[i[7:0]] = {2'b00, 2'b11, 4'h8, 2'b01, i[7:6], 4'hA};
                     end
-                end else if (i[7:6] == 2'b0 && i[5:4] != 2'b0) begin
+                end else if (i[5:4] != 2'b0) begin
                     // Destination is Reg A or Reg B
-                    lut[i[7:0]] = {2'b00, i[5:4], 4'h8, 2'b01, 2'b00, 4'hA};
+                    if (i[7:6] == 2'b00) begin
+                        // Load from immediate
+                        lut[i[7:0]] = {2'b00, i[5:4], 4'h8, 2'b01, 2'b00, 4'hA};
+                    end else if (i[7:6] == 2'b11) begin
+                        // Load from acc
+                        lut[i[7:0]] = {i[5:4], i[5:4], 4'h8, 2'b01, 2'b11, 4'hA};
+                    end
                 end
             end else if (`IS_RTYPE(i[3:0])) begin
                 // R type instructions
@@ -104,7 +110,7 @@ module control_lut (
             end
             DECODE: begin
                 if (lut[instruction] == 16'h0) begin
-                    control_signals = 16'h0;
+                    control_signals = 16'hFFFF;
                 end else begin
                     if (`IS_ITYPE(instruction[7:6])) begin
                         control_signals = DECODE_CONTROL_SIGNALS_I_TYPE;
