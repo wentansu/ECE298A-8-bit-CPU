@@ -1,140 +1,111 @@
-# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
-# SPDX-License-Identifier: Apache-2.0
-
+# test/test_instr_fetch.py
+import os
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import RisingEdge, ClockCycles, Timer
 
-INSTRUCTIONS = [
-    {"name": "NO_OP",         "opcode": 0x0, "type": ["N"]},
-    {"name": "ADD",           "opcode": 0x1, "type": ["R", "I"]},
-    {"name": "SUB",      "opcode": 0x2, "type": ["R", "I"]},
-    {"name": "SHL",    "opcode": 0x3, "type": ["O", "I"]},
-    {"name": "SHR",   "opcode": 0x4, "type": ["O", "I"]},
-    {"name": "AND",           "opcode": 0x5, "type": ["R", "I"]},
-    {"name": "OR",            "opcode": 0x6, "type": ["R", "I"]},
-    {"name": "XOR",           "opcode": 0x7, "type": ["R", "I"]},
-    {"name": "NOT",           "opcode": 0x8, "type": ["O", "I"]},
-    {"name": "LOAD", "opcode": 0xA, "type": ["I"]},
-    {"name": "GREAT",  "opcode": 0xB, "type": ["R", "I"]},
-    {"name": "LESS",     "opcode": 0xC, "type": ["R", "I"]},
-    {"name": "EQUAL",      "opcode": 0xD, "type": ["R", "I"]},
-]
+# ---- configurable knobs via env (optional) ----
+SYNC_LATENCY = int(os.getenv("IF_LATENCY", "1"))   # cycles from PC apply -> instr valid (0/1/2…)
+CLK_PERIOD_NS = int(os.getenv("IF_CLK_NS", "10"))  # 100 MHz default
+RESET_CYCLES  = int(os.getenv("IF_RST_CYC", "2"))  # async rst low cycles
+
+# A small demo "program": PC -> INSTR mapping (edit to match your design)
+# Keys/values can be decimal or hex (ints). We'll mask to bus widths below.
+PROGRAM = {
+    0x00: 0x13,  # e.g., NOP/ADDI x0,x0,0
+    0x01: 0x37,
+    0x02: 0x6F,
+    0x03: 0x63,
+    0x10: 0xAA,
+    0x1F: 0x55,
+}
+
+# --------- helpers ---------
+def pick_sig(dut, *names):
+    """Return the first signal that exists on the DUT from names list, else None."""
+    for n in names:
+        if hasattr(dut, n):
+            return getattr(dut, n)
+    return None
+
+def fully_driven(sig) -> bool:
+    """True if signal has no X/Z bits."""
+    s = sig.value.binstr.lower()
+    return ('x' not in s) and ('z' not in s)
+
+async def maybe_reset(dut):
+    rst_n = pick_sig(dut, "rst_n", "resetn", "reset_n", "rst", "rstb")
+    clk   = pick_sig(dut, "clk", "clock")
+    if clk is not None:
+        cocotb.start_soon(Clock(clk, CLK_PERIOD_NS, units="ns").start())
+    # If no reset present, just return
+    if rst_n is None:
+        return
+    # Async low reset
+    rst_n.value = 0
+    await (ClockCycles(clk, RESET_CYCLES) if clk is not None else Timer(10, units="ns"))
+    rst_n.value = 1
+    if clk is not None:
+        await RisingEdge(clk)
+
+async def apply_pc_and_wait(dut, pc_sig, instr_sig, pc_val):
+    """Drive PC and wait for SYNC_LATENCY cycles if a clock exists; else small time."""
+    pc_sig.value = pc_val
+    clk = pick_sig(dut, "clk", "clock")
+    if clk is None:
+        # purely combinational: give it a delta + a little time
+        await Timer(1, units="ns")
+    else:
+        # synchronous: wait the configured latency
+        if SYNC_LATENCY <= 0:
+            await RisingEdge(clk)  # at least one edge to sample inputs cleanly
+        else:
+            await ClockCycles(clk, SYNC_LATENCY)
 
 @cocotb.test()
-async def test_project(dut):
-    dut._log.info("Start")
+async def instr_fetch_table_check(dut):
+    """
+    Drive PC addresses and check the returned instruction/opcode
+    against the PROGRAM mapping above.
+    """
+    # Find signals (common aliases supported)
+    pc    = pick_sig(dut, "pc", "pc_addr", "addr", "address")
+    instr = pick_sig(dut, "instr", "instruction", "op", "opcode", "data", "rd_data")
 
-    # Set the clock period to 40 ns (25 MHz)
-    clock = Clock(dut.clk, 40, unit="ns")
-    cocotb.start_soon(clock.start())
+    assert pc is not None,    "Couldn't find a PC/address signal (tried: pc, pc_addr, addr, address)"
+    assert instr is not None, "Couldn't find an instruction/op signal (tried: instr, instruction, op, opcode, data, rd_data)"
 
-    # Reset
-    dut._log.info("Reset")
-    dut.ena.value = 1
-    dut.ui_in.value = 0
+    # Optional enables
+    ena = pick_sig(dut, "ena", "en", "enable", "cs", "chip_en")
+    if ena is not None:
+        ena.value = 1
 
-    dut._log.info("Test project behavior")
+    # Size info (mask expected values to bus widths)
+    pc_mask    = (1 << len(pc)) - 1
+    instr_mask = (1 << len(instr)) - 1
 
-    # for instruction in INSTRUCTIONS:
-    #     opcode = instruction["opcode"]
+    # Default other pins
+    ui_in  = pick_sig(dut, "ui_in")
+    uio_in = pick_sig(dut, "uio_in")
+    if ui_in  is not None:  ui_in.value  = 0
+    if uio_in is not None:  uio_in.value = 0
 
-    #     for type in instruction["type"]:
-    #         for sources in TYPES[type]:
+    await maybe_reset(dut)
 
-    #             # Set the input values you want to test
-    #             dut.ui_in.value = (sources << 4) | opcode
+    # Run through the table
+    for addr, expected in PROGRAM.items():
+        addr_m = addr & pc_mask
+        exp_m  = expected & instr_mask
 
-    #             # Wait for one clock cycle to see the output values
-    #             await ClockCycles(dut.clk, 5)
+        await apply_pc_and_wait(dut, pc, instr, addr_m)
 
-    #             # The following assersion is just an example of how to check the output values.
-    #             # Change it to match the actual expected output of your module:
-    #             print(f"{sources:04b} {instruction['name'].rjust(5)} {str(instruction['type']).rjust(10)}", dut.uio_out.value, dut.uo_out.value)
+        # Basic "driven" check to catch X/Z
+        assert fully_driven(instr), (
+            f"Instruction bus has X/Z at PC=0x{addr_m:X}: {instr.value.binstr}"
+        )
 
-    # Reset
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 1)
-    dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 5)
-
-    # LOAD A 8
-    dut.ui_in.value = 0b00011010
-    await ClockCycles(dut.clk, 1)
-    dut.ui_in.value = 0b00001000
-    await ClockCycles(dut.clk, 4)
-    print("Output:", dut.uo_out.value)
-
-    # # ADD A 1 = 9
-    # dut.ui_in.value = 0b00010001
-    # await ClockCycles(dut.clk, 1)
-    # dut.ui_in.value = 0b00000001
-    # await ClockCycles(dut.clk, 4)
-    # print("Output:", dut.uo_out.value)
-
-    # # AND A ACC = 8
-    # dut.ui_in.value = 0b11010101
-    # await ClockCycles(dut.clk, 1)
-    # await ClockCycles(dut.clk, 4)
-    # print("Output:", dut.uo_out.value)
-
-    # LOAD B 0
-    dut.ui_in.value = 0b00101010
-    await ClockCycles(dut.clk, 1)
-    dut.ui_in.value = 0b00000000
-    await ClockCycles(dut.clk, 4)
-    print("Output:", dut.uo_out.value)
-
-    # # SHL B = 30
-    # dut.ui_in.value = 0b00100011
-    # await ClockCycles(dut.clk, 1)
-    # await ClockCycles(dut.clk, 4)
-    # print("Output:", dut.uo_out.value)
-
-    # # NOT Acc
-    # dut.ui_in.value = 0b00111000
-    # await ClockCycles(dut.clk, 1)
-    # await ClockCycles(dut.clk, 4)
-    # print("Output:", dut.uo_out.value)
-
-    # LOAD Acc <= Reg A
-    # dut.ui_in.value = 0b01111010
-    # await ClockCycles(dut.clk, 1)
-    # # dut.ui_in.value = 0b00001010
-    # await ClockCycles(dut.clk, 4)
-    # print("Output:", dut.uo_out.value)
-
-    # # Invalid
-    # dut.ui_in.value = 0b11111111
-    # await ClockCycles(dut.clk, 1)
-    # print("Output:", dut.uo_out.value)
-    # await ClockCycles(dut.clk, 1)
-    
-    # BEZ B 15
-    dut.ui_in.value = 0b00101110
-    await ClockCycles(dut.clk, 1)
-    dut.ui_in.value = 0b00001111
-    await ClockCycles(dut.clk, 4)
-    print("Output:", dut.uo_out.value)
-
-    # JUMP 1
-    dut.ui_in.value = 0b00001001
-    await ClockCycles(dut.clk, 1)
-    dut.ui_in.value = 0b00000001
-    await ClockCycles(dut.clk, 4)
-    print("Output:", dut.uo_out.value)
-
-    # Reset
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 1)
-    dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 5)
-
-    # NO OP
-    dut.ui_in.value = 0b0
-    await ClockCycles(dut.clk, 1)
-    await ClockCycles(dut.clk, 4)
-    print("Output:", dut.uo_out.value)
-
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+        got = int(instr.value)
+        assert got == exp_m, (
+            f"Mismatch at PC=0x{addr_m:X}: expected 0x{exp_m:0{(len(instr)+3)//4}X}, "
+            f"got 0x{got:0{(len(instr)+3)//4}X}"
+        )
