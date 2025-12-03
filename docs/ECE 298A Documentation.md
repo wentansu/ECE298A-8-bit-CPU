@@ -21,7 +21,7 @@ If the instruction is invalid, the output is Z.
 
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Send instruction (1 indicates next instruction should be sent now, output is available in same cycle) | Status (0 indicates normal, 1 indicates error and output will be Z) | PC value (first instruction has value 1, initialization cycle has value 0\) |  |  |  |  |  |
+| Send instruction (1 indicates next instruction should be sent now, output is available in same cycle) | Status (0 indicates normal, 1 indicates error and output will be Z) | PC value (first instruction has value 1, initialization cycle has value 0\) | PC value | PC value | PC value | PC value | PC value |
 
 ## Instruction Set
 
@@ -29,19 +29,19 @@ If the instruction is invalid, the output is Z.
 
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Sources |  |  |  | Opcode |  |  |  |
+| Sources | Opcode | Opcode | Opcode | Opcode | Opcode | Opcode | Opcode |
 
 ### Sources for different types of instructions
 
 | Instruction type | 7 | 6 | 5 | 4 |
 | :---- | :---: | :---: | :---: | :---: |
 | No op (N) | 0 | 0 | 0 | 0 |
-| Regular (R) | Immediate (00), Reg B (10), or Accumulator (11) |  | 0 | 1 |
-| One source (O) | 0 | 0 | Immediate (00), Reg A (01), Reg B (10), or Accumulator (11) |  |
-| Load (L) | 0 | 0 | Reg A (01) or Reg B (10) |  |
-|  | Immediate (00), Reg A (01), or Reg B (10) |  | 1 | 1 |
+| Regular (R) | Immediate (00), Reg B (10), or Accumulator (11) | Immediate (00), Reg A (01), or Reg B (10) | 0 | 1 |
+| One source (O) | 0 | 0 | Immediate (00), Reg A (01), Reg B (10), or Accumulator (11) | Immediate (00), Reg A (01), or Reg B (10) |
+| Load (L) | 0 | 0 | Reg A (01) or Reg B (10) | Reg A (01) or Reg B (10) |
+|  | Immediate (00), Reg A (01), or Reg B (10) | Immediate (00), Reg A (01), or Reg B (10) | 1 | 1 |
 | Jump (J) | 0 | 0 | 0 | 0 |
-| Branch (B) | 0 | 0 | Reg A (01), Reg B (10), or Accumulator (11) |  |
+| Branch (B) | 0 | 0 | Reg A (01), Reg B (10), or Accumulator (11) | Reg A (01), Reg B (10), or Accumulator (11) |
 
 ### Instructions
 
