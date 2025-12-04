@@ -59,7 +59,7 @@ async def send(dut, opcode: int, source_1: int, source_2: int, immediate: int) -
         uio_value = int(dut.uio_out.value)
         status = uio_value >> 6
     except:
-        uio_value = 0
+        uio_value = 64
         status = 0b10
     if status == 0b10:
         dut._log.info(f"RES: {dut.uo_out.value}")
