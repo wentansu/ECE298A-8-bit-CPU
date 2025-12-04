@@ -31,13 +31,12 @@ If the instruction is invalid, the output is Z.
 ### Example Program
 | Number | Instruction            | Output           |
 |--------|-------------------------|------------------|
-| 1      | NO OP                  | Z                |
-| 2      | LOAD REG A 5           | 5                |
-| 3      | LOAD REG B 10          | 10               |
-| 4      | SUB REG A 1            | 4, 3, 2, 1, 0    |
-| 5      | LOAD REG A ACC         | 4, 3, 2, 1, 0    |
-| 6      | BNEZ REG A 4           | 1, 1, 1, 1, 0    |
-| 7      | SHL REG B              | 20               |
+| 1      | LOAD REG A 5           | 5                |
+| 2      | LOAD REG B 10          | 10               |
+| 3      | SUB REG A 1            | 4, 3, 2, 1, 0    |
+| 4      | LOAD REG A ACC         | 4, 3, 2, 1, 0    |
+| 5      | BNEZ REG A 3           | 1, 1, 1, 1, 0    |
+| 6      | SHL REG B              | 20               |
 
 Equivalent code in C:
 ```
