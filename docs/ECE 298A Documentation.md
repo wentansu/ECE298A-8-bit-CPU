@@ -8,10 +8,13 @@
 | clk | Clock to drive microcontroller | The microcontroller is tested using a frequency of 25MHz |
 | rst\_n | Reset microcontroller | When rst\_n is low, the microcontroller goes to FETCH state for the next clock cycle. All registers are reset to 0\. The PC is reset to 0 at the cycle after that. The next instruction can be sent 1 cycle after resetting. |
 
-## Outputs
-
-Every instruction takes 5 cycles. The initialization takes 7 cycles. Resetting takes 2 cycles including the cycle where the reset signal is passed in. If an invalid instruction is sent, 1 cycle needs to pass before the next can be sent in.  
+### Sending Instructions
+- After initialization (7 cycles), the first instruction can be sent. If an instruction involves an immediate value, it has to be sent at the next cycle. When the “send” bit of the bidirectional output pins is 1 at the end of executing an instruction, the next instruction can be sent at the next cycle. The microcontroller goes back to FETCH state at the next cycle.
+- All instructions that intend to be executed need to be numbered in order starting from 1. This number corresponds with the PC value of the bidirectional output pins.
+- Every instruction takes 5 cycles. The initialization takes 7 cycles. Resetting takes 2 cycles including the cycle where the reset signal is passed in. If an invalid instruction is sent, 1 cycle needs to pass before the next can be sent in.
 When the microcontroller runs at 25MHz, each instruction takes 200ns.
+
+## Outputs
 
 ### Output pins (uo\_out\[7:0\])
 
@@ -22,6 +25,29 @@ If the instruction is invalid, the output is Z.
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | Send instruction (1 indicates next instruction should be sent now, output is available in same cycle) | Status (0 indicates normal, 1 indicates error and output will be Z) | PC value (first instruction has value 1, initialization cycle has value 0\) | PC value | PC value | PC value | PC value | PC value |
+- The PC value indicates which instruction to send for the next cycle. Jump and branch instructions update this value depending on whether the branch is taken.
+- Since only 6 bits of the PC value is outputted, the maximum number of instructions that can run without resetting is 64.
+
+### Example Program
+| Number | Instruction            | Output           |
+|--------|-------------------------|------------------|
+| 1      | NO OP                  | Z                |
+| 2      | LOAD REG A 5           | 5                |
+| 3      | LOAD REG B 10          | 10               |
+| 4      | SUB REG A 1            | 4, 3, 2, 1, 0    |
+| 5      | LOAD REG A ACC         | 4, 3, 2, 1, 0    |
+| 6      | BNEZ REG A 4           | 1, 1, 1, 1, 0    |
+| 7      | SHL REG B              | 20               |
+
+Equivalent code in C:
+```
+int A = 5;
+int B = 10;
+while (A != 0) {
+	A--;
+}
+B = B << 1;
+```
 
 ## Instruction Set
 
@@ -36,8 +62,8 @@ If the instruction is invalid, the output is Z.
 | Instruction type | 7 | 6 | 5 | 4 |
 | :---- | :---: | :---: | :---: | :---: |
 | No op (N) | 0 | 0 | 0 | 0 |
-| Regular (R) | Immediate (00), Reg B (10), or Accumulator (11) | Immediate (00), Reg A (01), or Reg B (10) | 0 | 1 |
-| One source (O) | 0 | 0 | Immediate (00), Reg A (01), Reg B (10), or Accumulator (11) | Immediate (00), Reg A (01), or Reg B (10) |
+| Regular (R) | Immediate (00), Reg B (10), or Accumulator (11) | Immediate (00), Reg B (10), or Accumulator (11) | 0 | 1 |
+| One source (O) | 0 | 0 | Immediate (00), Reg A (01), Reg B (10), or Accumulator (11) | Immediate (00), Reg A (01), Reg B (10), or Accumulator (11) |
 | Load (L) | Immediate (00) or Accumulator (11) | Immediate (00) or Accumulator (11) | Reg A (01) or Reg B (10) | Reg A (01) or Reg B (10) |
 |  | Immediate (00), Reg A (01), or Reg B (10) | Immediate (00), Reg A (01), or Reg B (10) | 1 | 1 |
 | Jump (J) | 0 | 0 | 0 | 0 |
