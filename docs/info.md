@@ -45,4 +45,6 @@ Considering the limited amount of input and outputs on the chip, we had to be sm
 To make sure the work is split evenly and completed on time we have created a [task list](https://docs.google.com/document/d/1KP0tjoMqJHFCxz07KbVXQsKxXqZ9zHIiKM25s_u11yU/)
 
 ## How to test
-Once each block is implemented we will create tests to ensure functionality, this section will update with time!
+We have created a test script to simulate the instruction register of the micro-controller. This will will wait for the micro-controller to send a requested PC count and will return the allocted instruction. Our hope was to make this seperate device act as close to the instruction register as possible in order to make the addition as simple as possible.
+
+With this script will be able to make our own version of custom assembly code and quickly change the program to test all functions, see next doc to understand how microcontroller reads instructions.
