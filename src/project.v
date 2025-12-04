@@ -167,7 +167,7 @@ module tt_um_8_bit_cpu (
 
   assign uio_oe = 8'hFF;
   assign uio_out = {send_ins, invalid_ins, pc_out[5:0]};
-  assign uo_out = (invalid_ins == 0 && out && state == OUTPUT) ? acc_out : 8'bZ;
+  assign uo_out = (invalid_ins == 0 && out && state == OUTPUT) ? acc_out : 8'b0;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
