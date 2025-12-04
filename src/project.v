@@ -71,7 +71,8 @@ module tt_um_8_bit_cpu (
     .load(load_branch),
     .uo_out(pc_out),
     .clk(clk),
-    .inc(pc_inc)
+    .inc(pc_inc),
+    .rst_n(reset)
   );
 
   wire [7:0] immediate;
