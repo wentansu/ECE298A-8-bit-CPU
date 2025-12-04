@@ -17,7 +17,7 @@ Our goal for this project is to implement 8-bit CPU using the TinyTapout. Below,
 As seen in the diagram he CPU's architecture is coordinated by seperate unit blocks:
 
 #### Control Sequencer: 
-- This will be the brains of the CPU. A state machine that takes in instructions from the I/O, interprets its opcode and determines what units of the CPU need to be activated to get the requested output
+- This will be the brains of the CPU. A state machine that takes in instructions from the I/O. A lookup table is used to store control signals for all valid instructions. The LUT interprets an instruction and returns what units of the CPU need to be activated to get the requested output
 
 #### Arithmetic Logic Unit (ALU):
 - This unit takes in an input from the registers and performs mathematical operations based off the request from Control Sequencer (Add, Sub, etc). It then writes the output to the accumulator 
@@ -25,7 +25,6 @@ As seen in the diagram he CPU's architecture is coordinated by seperate unit blo
 #### Registers:
 - Index (A and B): Two 8-bit registers used for tempory storage
 - Accumulator (Acc): An 8-bit register where the output of the ALU is saved
-- Output: An 8-bit register used to hold the value of the output while CPU works on next instruction
 
 ## Table of I/O Assignments
 
@@ -34,12 +33,12 @@ Considering the limited amount of input and outputs on the chip, we had to be sm
 | Internal Mapping | Pin Mapping | I/O |
 | ---------------- | ----------- | --- |
 | Data Bus Out [7:0] | Out [7:0] | Out - Output of CPU |
-| Data Bus In [7:0] | In [7:0] | In - Take in instruction from test script |
-| PC | I/O [7:4] | Out - Send to test script for correct instruction |
-| Instruction Enable | I/O [3] | Out - Tells test script to send instruction |
-| Status | I/O [2] | Out - Tells status of CPU (active, error) |
-| Clk | I/O [1] | In - clock for CPU controlled by test script |
-| RST' | I/O [0] | In - Resets PC |
+| Data Bus In [7:0] | In [7:0] | In - Take in instruction and immediate value from test script |
+| PC | I/O [5:0] | Out - Tells test script which instruction to send for next cycle |
+| Instruction Enable | I/O [7] | Out - Tells test script to send instruction |
+| Status | I/O [6] | Out - Tells status of CPU (active, error) |
+| Clk | clk | In - clock for CPU controlled by test script |
+| RST' | rst_n | In - Resets microcontroller |
 
 ## Work Schedule
 To make sure the work is split evenly and completed on time we have created a [task list](https://docs.google.com/document/d/1KP0tjoMqJHFCxz07KbVXQsKxXqZ9zHIiKM25s_u11yU/)

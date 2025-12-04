@@ -38,7 +38,7 @@ If the instruction is invalid, the output is Z.
 | No op (N) | 0 | 0 | 0 | 0 |
 | Regular (R) | Immediate (00), Reg B (10), or Accumulator (11) | Immediate (00), Reg A (01), or Reg B (10) | 0 | 1 |
 | One source (O) | 0 | 0 | Immediate (00), Reg A (01), Reg B (10), or Accumulator (11) | Immediate (00), Reg A (01), or Reg B (10) |
-| Load (L) | 0 | 0 | Reg A (01) or Reg B (10) | Reg A (01) or Reg B (10) |
+| Load (L) | Immediate (00) or Accumulator (11) | Immediate (00) or Accumulator (11) | Reg A (01) or Reg B (10) | Reg A (01) or Reg B (10) |
 |  | Immediate (00), Reg A (01), or Reg B (10) | Immediate (00), Reg A (01), or Reg B (10) | 1 | 1 |
 | Jump (J) | 0 | 0 | 0 | 0 |
 | Branch (B) | 0 | 0 | Reg A (01), Reg B (10), or Accumulator (11) | Reg A (01), Reg B (10), or Accumulator (11) |
@@ -70,8 +70,8 @@ Used to control all components of the microcontroller during each state. The LUT
 
 | Position | Control Signal | Usage |
 | :---- | :---- | :---- |
-| 15 | MemRead | Read from external memory (for future) |
-| 14 | MemWrite | Write to external memory (for future) |
+| 15 | RegSrcB | Source selection for Reg B multiplexer, 0 selects immediate register, 1 selects accumulator |
+| 14 | RegSrcA | Source selection for Reg A multiplexer, 0 selects immediate register, 1 selects accumulator |
 | 13 | RegDest\[1\] | 2 bit value for the destination register to write to |
 | 12 | RegDest\[0\] |  |
 | 11 | RegWrite | Write to destination register specified by RegDest\[1:0\] |
