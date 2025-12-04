@@ -56,12 +56,14 @@ async def send(dut, opcode: int, source_1: int, source_2: int, immediate: int) -
     if immediate: dut.ui_in.value = immediate
     await ClockCycles(dut.clk, 4)
     try:
-        status = int(dut.uio_out.value) >> 6
+        uio_value = int(dut.uio_out.value)
+        status = uio_value >> 6
     except:
+        uio_value = 0
         status = 0b10
     if status == 0b10:
         dut._log.info(f"RES: {dut.uo_out.value}")
-        return (int(dut.uio_out.value) & (0b00111111))
+        return (uio_value & (0b00111111))
     else:
         dut._log.info(f"ERR: {dut.uo_out.value}")
         return -1
