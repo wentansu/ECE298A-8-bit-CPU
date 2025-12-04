@@ -64,9 +64,11 @@ module tt_um_8_bit_cpu (
   wire send_ins = (state == OUTPUT) || invalid_ins;
   wire invalid_ins = (state == DECODE) && (instruction != 8'h0) && (control_signals == 16'hFFFF);
 
+  wire load_branch = branch && (alu_result == 8'b1);
+
   counter pc (
     .ui_in(immediate),
-    .load(branch),
+    .load(load_branch),
     .uo_out(pc_out),
     .clk(clk),
     .inc(pc_inc)
@@ -196,7 +198,7 @@ module tt_um_8_bit_cpu (
         end
         WRITEBACK: begin
           state <= OUTPUT;
-          branch <= branch && (alu_result == 8'b1);
+          branch <= 0;
         end
         OUTPUT: begin
           state <= FETCH;

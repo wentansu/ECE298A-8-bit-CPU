@@ -59,6 +59,7 @@ async def send(dut, opcode: int, source_1: int, source_2: int, immediate: int) -
         uio_value = int(dut.uio_out.value)
         status = uio_value >> 6
     except:
+        print(dut.uio_out.value)
         uio_value = 64
         status = 0b10
     if status == 0b10:

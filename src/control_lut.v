@@ -67,7 +67,7 @@ module control_lut (
                         // Source is Reg B or Imm
                         lut[i[7:0]] = {2'b00, 2'b11, 4'h8, 2'b01, i[7:6], 4'hA};
                     end
-                end else if (i[5:4] != 2'b0) begin
+                end else if (i[5:4] != 2'b00) begin
                     // Destination is Reg A or Reg B
                     if (i[7:6] == 2'b00) begin
                         // Load from immediate
