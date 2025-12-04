@@ -29,7 +29,7 @@ If the instruction is invalid, the output is Z.
 
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Sources | Opcode | Opcode | Opcode | Opcode | Opcode | Opcode | Opcode |
+| Sources | Sources | Sources | Sources | Opcode | Opcode | Opcode | Opcode |
 
 ### Sources for different types of instructions
 
